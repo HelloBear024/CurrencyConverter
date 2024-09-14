@@ -33,7 +33,7 @@ class CurrencyViewModel(application: Application) : AndroidViewModel(application
         if (euroRatesJson != null) {
             Log.d("CurrencyRates", "Stored JSON in SharedPreferences: $euroRatesJson")
             val rates: Map<String, Double> = Gson().fromJson(euroRatesJson, object : TypeToken<Map<String, Double>>() {}.type)
-            _currencyRates.value = rates  // Update the StateFlow with the stored rates
+            _currencyRates.value = rates
         } else {
             Log.e("CurrencyViewModel", "No stored Euro rates found")
         }

@@ -84,7 +84,7 @@ fun MainScreen()
     var convertedAmount by remember { mutableStateOf("") }
 
     var amountInput by remember { mutableStateOf("") }
-
+    var isSwitched by remember { mutableStateOf(false) } // Boolean to track switching state
 
 
     LaunchedEffect(amountInput, baseCurrency, targetCurrency) {
@@ -92,7 +92,13 @@ fun MainScreen()
             val converter = CurrencyConverter(context)  // Use the context to create CurrencyConverter
             val amountToConvert = amountInput.toDoubleOrNull() ?: 0.0
             try {
-                val convertedValue = converter.convert(baseCurrency, targetCurrency, amountToConvert)
+                val convertedValue = if (!isSwitched) {
+                    // Normal conversion from base to target
+                    converter.convert(baseCurrency, targetCurrency, amountToConvert)
+                } else {
+                    // Reversed conversion from target to base
+                    converter.convert(targetCurrency, baseCurrency, amountToConvert)
+                }
                 convertedAmount = convertedValue.toString()
                 Log.d("Converted Amount", convertedAmount)
             } catch (e: Exception) {

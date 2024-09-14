@@ -12,14 +12,12 @@ class CurrencyWorker(context: Context, workerParams: WorkerParameters) : Corouti
     override suspend fun doWork(): Result {
 
         return try {
-            // Fetch the currency rates for Euro
+
             val response = RetrofitInstance.api.getCurrencyRates("eur")
 
             Log.d("CurrencyWorker", "API Response: ${response.eur}")  // Log the API response
 
             if (response.eur != null) {
-                // Store the rates in a shared storage or database (for reuse)
-                // For example, store in SharedPreferences or Room
                 val sharedPrefs = applicationContext.getSharedPreferences("currency_prefs", Context.MODE_PRIVATE)
                 sharedPrefs.edit().putString("euro_rates", Gson().toJson(response.eur)).apply()
                 Log.d("CurrencyWorker", "Stored rates in SharedPreferences: ${response.eur}")
