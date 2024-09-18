@@ -2,33 +2,42 @@ package com.currecy.mycurrencyconverter.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.currecy.mycurrencyconverter.R
+
+val LeagueSpartan = FontFamily(
+    Font(R.font.leaguespartan_regular)
+)
+val LibreBaskerville =  FontFamily(
+    Font(R.font.librebaskerville_regular),
+    Font(R.font.librebaskerville_bold, FontWeight.Bold)
+)
+
 
 // Set of Material typography styles to start with
 val Typography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+
+    displayLarge = TextStyle(
+        fontFamily = LeagueSpartan,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    )
-    /* Other default text styles to override
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
+        fontSize = 36.sp
+    ),
+    displayMedium = TextStyle(
+        fontFamily = LibreBaskerville,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
+        fontFamily = LibreBaskerville,
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = LibreBaskerville,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp
     )
-    */
 )

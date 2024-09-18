@@ -1,11 +1,10 @@
 package com.currecy.mycurrencyconverter
 
 import retrofit2.http.GET
-import retrofit2.http.Path
+import retrofit2.http.Url
 
 interface CurrencyApiService {
-
-    @GET("v1/currencies/{currencyCode}.json")
-    suspend fun getCurrencyRates(@Path("currencyCode") currencyCode: String): CurrencyResponse
+    @GET
+    suspend fun getCurrencyRates(@Url url: String): CurrencyResponse
 
 }

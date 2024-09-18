@@ -15,7 +15,6 @@ class CountryNameAndCurrencyCode(countryName: String, currencyCode: String) {
         "Bahrain", "Burundi", "Bermuda", "Brunei", "Bolivia", "Brazil", "Bahamas", "Bhutan",
         "Botswana", "Belarus", "Belarus", "Belize", "Canada", "Congo", "Switzerland", "Chile",
         "China", "China", "Colombia", "Costa Rica",
-        // and so on...
     )
 
     fun createCountryCurrencyList(): List<CountryNameAndCurrencyCode> {
