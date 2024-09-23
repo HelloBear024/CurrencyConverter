@@ -30,103 +30,61 @@ class CurrencyViewModel(private val rates: CurrencyRateDao) : ViewModel() {
         viewModelScope.launch {
             Log.d("ViewModel", "onAmountChange called: newAmount = $newAmount, index = $index")
             _currencyRatesState.update { state ->
-                val updatedState = when (index) {
-                    0 -> state.copy(
-                        firstValue = newAmount,
-                        secondValue = if (state.secondCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.firstCurrency, state.secondCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.firstCurrency} to ${state.secondCurrency}: $converted")
-                            converted
-                        } else state.secondValue,
-                        thirdValue = if (state.thirdCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.firstCurrency, state.thirdCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.firstCurrency} to ${state.thirdCurrency}: $converted")
-                            converted
-                        } else state.thirdValue,
-                        fourthValue = if (state.fourthCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.firstCurrency, state.fourthCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.firstCurrency} to ${state.fourthCurrency}: $converted")
-                            converted
-                        } else state.fourthValue,
-                        fifthValue = if (state.fifthCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.firstCurrency, state.fifthCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.firstCurrency} to ${state.fifthCurrency}: $converted")
-                            converted
-                        } else state.fifthValue,
-                        sixthValue = if (state.sixthCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.firstCurrency, state.sixthCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.firstCurrency} to ${state.sixthCurrency}: $converted")
-                            converted
-                        } else state.sixthValue
-                    )
-
-                    1 -> state.copy(
-                        secondValue = newAmount,
-                        firstValue = if (state.firstCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.secondCurrency, state.firstCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.secondCurrency} to ${state.firstCurrency}: $converted")
-                            converted
-                        } else state.firstValue,
-                        thirdValue = if (state.thirdCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.secondCurrency, state.thirdCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.secondCurrency} to ${state.thirdCurrency}: $converted")
-                            converted
-                        } else state.thirdValue,
-                        fourthValue = if (state.fourthCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.secondCurrency, state.fourthCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.secondCurrency} to ${state.fourthCurrency}: $converted")
-                            converted
-                        } else state.fourthValue,
-                        fifthValue = if (state.fifthCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.secondCurrency, state.fifthCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.secondCurrency} to ${state.fifthCurrency}: $converted")
-                            converted
-                        } else state.fifthValue,
-                        sixthValue = if (state.sixthCurrency.isNotEmpty()) {
-                            val converted = convertAmount(newAmount, state.secondCurrency, state.sixthCurrency)
-                            Log.d("ConversionLog", "Converted $newAmount from ${state.secondCurrency} to ${state.sixthCurrency}: $converted")
-                            converted
-                        } else state.sixthValue
-                    )
-                    // Add similar logic for other indices...
-                    else -> state
+                // Create a new list of converted values
+                val updatedValues = state.values.mapIndexed { i, currentValue ->
+                    if (i != index && state.currencies[i].isNotEmpty()) {
+                        // Convert the value from the selected currency at the index to all other currencies
+                        val converted = convertAmount(
+                            amount = newAmount,
+                            fromCurrency = state.currencies[index],
+                            toCurrency = state.currencies[i]
+                        )
+                        val formattedValue = formatToTwoDecimals(converted) // Format to two decimals
+                        Log.d("ConversionLog", "Converted $newAmount from ${state.currencies[index]} to ${state.currencies[i]}: $formattedValue")
+                        formattedValue
+                    } else if (i == index) {
+                        formatToTwoDecimals(newAmount) // Update the amount at the selected index and format it
+                    } else {
+                        currentValue
+                    }
                 }
-                updatedState
+
+                // Update the state with the new converted values
+                state.copy(values = updatedValues)
             }
         }
     }
 
-    // Function to handle currency change and trigger conversions
     fun onCurrencyChange(newCurrency: String, index: Int) {
         viewModelScope.launch {
             Log.d("ViewModel", "onCurrencyChange called: newCurrency = $newCurrency, index = $index")
+
             _currencyRatesState.update { state ->
-                val updatedState = when (index) {
-                    0 -> state.copy(
-                        firstCurrency = newCurrency,
-                        secondValue = if (state.secondCurrency.isNotEmpty()) convertAmount(state.firstValue, newCurrency, state.secondCurrency) else 0.0,
-                        thirdValue = if (state.thirdCurrency.isNotEmpty()) convertAmount(state.firstValue, newCurrency, state.thirdCurrency) else 0.0,
-                        fourthValue = if (state.fourthCurrency.isNotEmpty()) convertAmount(state.firstValue, newCurrency, state.fourthCurrency) else 0.0,
-                        fifthValue = if (state.fifthCurrency.isNotEmpty()) convertAmount(state.firstValue, newCurrency, state.fifthCurrency) else 0.0,
-                        sixthValue = if (state.sixthCurrency.isNotEmpty()) convertAmount(state.firstValue, newCurrency, state.sixthCurrency) else 0.0
-                    )
 
-                    1 -> state.copy(
-                        secondCurrency = newCurrency,
-                        firstValue = if (state.firstCurrency.isNotEmpty()) convertAmount(state.secondValue, newCurrency, state.firstCurrency) else 0.0,
-                        thirdValue = if (state.thirdCurrency.isNotEmpty()) convertAmount(state.secondValue, newCurrency, state.thirdCurrency) else 0.0,
-                        fourthValue = if (state.fourthCurrency.isNotEmpty()) convertAmount(state.secondValue, newCurrency, state.fourthCurrency) else 0.0,
-                        fifthValue = if (state.fifthCurrency.isNotEmpty()) convertAmount(state.secondValue, newCurrency, state.fifthCurrency) else 0.0,
-                        sixthValue = if (state.sixthCurrency.isNotEmpty()) convertAmount(state.secondValue, newCurrency, state.sixthCurrency) else 0.0
-                    )
-
-
-                    else -> state
+                // Update only the currency for the selected index
+                val updatedCurrencies = state.currencies.toMutableList().apply {
+                    this[index] = newCurrency
                 }
-                updatedState
+
+                // Recalculate the value for the specific index if there's an amount
+                val updatedValues = state.values.toMutableList().apply {
+                    if (state.values[index] != 0.0) {
+                        this[index] = formatToTwoDecimals(
+                            convertAmount(
+                                amount = state.values[index],
+                                fromCurrency = state.currencies[index],  // previous currency
+                                toCurrency = newCurrency  // new currency
+                            )
+                        )
+                    }
+                }
+
+                // Update the state with new currencies and updated value only for the selected index
+                state.copy(values = updatedValues, currencies = updatedCurrencies)
             }
         }
     }
+
 
     // Function to convert based on rates
     private suspend fun convertAmount(amount: Double, fromCurrency: String, toCurrency: String): Double {
@@ -156,6 +114,8 @@ class CurrencyViewModel(private val rates: CurrencyRateDao) : ViewModel() {
     }
 
 
-
+    private fun formatToTwoDecimals(value: Double): Double {
+        return "%.2f".format(value).toDouble()
+    }
 
 }

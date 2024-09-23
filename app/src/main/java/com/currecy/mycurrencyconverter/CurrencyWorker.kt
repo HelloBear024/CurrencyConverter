@@ -52,10 +52,10 @@ class CurrencyWorker(context: Context, workerParams: WorkerParameters) : Corouti
 
         if (response.eur != null) {
 
-            val selectedCurrencies = CurrencyOptionsData.options
+            val selectedCurrencyCodes = CurrencyOptionsData.options.map { it.second.lowercase(Locale.getDefault()) }
 
             response.eur.filter { (currencyCode, _) ->
-                selectedCurrencies.contains(currencyCode.lowercase(Locale.getDefault()))  // Filter based on the allowed currencies
+                selectedCurrencyCodes.contains(currencyCode.lowercase(Locale.getDefault()))  // Filter based on the allowed currency codes
             }.forEach { (currencyCode, rate) ->
                 val currencyRate = CurrencyRate(currencyCode = currencyCode, rate = rate, date = date)
                 currencyDao.insert(currencyRate)
