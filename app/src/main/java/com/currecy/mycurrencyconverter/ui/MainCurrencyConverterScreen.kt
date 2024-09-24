@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +22,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -71,7 +73,6 @@ import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-
                 items(converterUIState.numberOfItems) { index ->
                     CurrencySelectorItem(
                         currencyOptions = CurrencyOptionsData.options,
@@ -161,7 +162,7 @@ fun CurrencySelectorItem(
             onExpandedChange = { expanded = !expanded },
             modifier = modifier
         ) {
-            // TextField to allow user to input or select a currency
+
             OutlinedTextField(
                 value = selectedOptionText,
                 onValueChange = {},
@@ -226,10 +227,15 @@ fun CurrencySelectorItem(
 fun AddMoreContainersBtn(onClick: () -> Unit, modifier: Modifier = Modifier) {
     FloatingActionButton(
         onClick = { onClick() },
-        modifier = Modifier.padding(16.dp)
-
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.padding(16.dp).size(75.dp)
     ){
-        Icon(Icons.Filled.Add, contentDescription = "Add new currency field")
+        Icon(
+            Icons.Filled.Add,
+            contentDescription = "Add new currency field",
+            modifier = Modifier.size(40.dp)
+        )
+
     }
 }
 

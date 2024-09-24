@@ -10,12 +10,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,21 +30,23 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.currecy.mycurrencyconverter.R
+import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
 import com.currecy.mycurrencyconverter.database.CurrencyRateDao
 import com.currecy.mycurrencyconverter.model.CameraViewModel
 import com.currecy.mycurrencyconverter.model.CurrencyViewModelFactory
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -53,6 +58,10 @@ import kotlinx.coroutines.withContext
     )
     val converterUIStateCamera by cameraViewModel.converterUIState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    var previousDetectedText by remember { mutableStateOf("") }
+    var detectionStartTime by remember { mutableStateOf(0L) }
+    var conversionTriggered by remember { mutableStateOf(false) }
+
 
     // State for detected text and its position
     var detectedText by remember { mutableStateOf("") }
@@ -67,8 +76,7 @@ import kotlinx.coroutines.withContext
     val captureAreaOffsetY = 150.dp
     var clipBorderColor by remember { mutableStateOf(Color.Gray) } // Initially gray
     var ignoreNewDetections by remember { mutableStateOf(false) }
-    var rectangleBounds by remember { mutableStateOf<RectF?>(null) }
-
+    var rectangleBounds by remember { mutableStateOf(RectF()) }
     // Get the current screen density in a composable context
     val density = LocalDensity.current
 
@@ -90,32 +98,134 @@ import kotlinx.coroutines.withContext
     LaunchedEffect(Unit) {
         firstImageUri = getFirstImageFromGallery(context)
     }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .onSizeChanged { layoutSize = it }
+
+
+//    LaunchedEffect(layoutSize) {
+//        if (layoutSize.width > 0 && layoutSize.height > 0) {
+//            val captureAreaLeftPx = ((layoutSize.width - with(density) { captureAreaWidth.toPx() }) / 2f)
+//            val captureAreaTopPx = with(density) { captureAreaOffsetY.toPx() }
+//            val captureAreaRightPx = captureAreaLeftPx + with(density) { captureAreaWidth.toPx() }
+//            val captureAreaBottomPx = captureAreaTopPx + with(density) { captureAreaHeight.toPx() }
+//
+//            rectangleBounds = RectF(
+//                captureAreaLeftPx,
+//                captureAreaTopPx,
+//                captureAreaRightPx,
+//                captureAreaBottomPx
+//            )
+//
+//            Log.d("RectangleBounds", "rectangleBounds: $rectangleBounds")
+//        } else {
+//            Log.d("RectangleBounds", "layoutSize not ready yet")
+//        }
+//    }
+
+
+    DropdownMenuItemRow(
+        currencyOptions = CurrencyOptionsData.options,
+        onCurrencyChange = { newAmount ->
+            cameraViewModel.onAmountChange()
+        },
+        selectedCurrency = converterUIStateCamera.selectedCurrencyTo
+    )
+
+
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize()
     ) {
+        val boxWidth = constraints.maxWidth.toFloat()
+        val boxHeight = constraints.maxHeight.toFloat()
+
+        Log.d("BoxWithConstraints", "boxWidth: $boxWidth, boxHeight: $boxHeight")
+
+        // Calculate rectangle bounds based on BoxWithConstraints
+        with(density) {
+            val rectLeft = (boxWidth - captureAreaWidth.toPx()) / 2f
+            val rectTop = captureAreaOffsetY.toPx()
+            val rectRight = rectLeft + captureAreaWidth.toPx()
+            val rectBottom = rectTop + captureAreaHeight.toPx()
+
+            rectangleBounds = RectF(
+                rectLeft,
+                rectTop,
+                rectRight,
+                rectBottom
+            )
+
+            Log.d("RectangleBounds", "rectangleBounds: $rectangleBounds")
+        }
+
         CameraPreview(
             modifier = Modifier.fillMaxSize(),
-            rectangleBounds = RectF(), // Initial default bounds
+            rectangleBounds = rectangleBounds, // Initial default bounds
             onTextDetected = { detectedTextValue, boundingBox ->
-                coroutineScope.launch {
-                    detectedText = detectedTextValue
-                    textPosition = boundingBox
-                    clipBorderColor = Color(0xFFFFD700) // Change the color when text is detected
-                    delay(3000)
-                    clipBorderColor = Color.Gray // Reset color after delay
+                Log.d("Camera Screen", "Text found + $detectedTextValue ")
+                val currentTime = System.currentTimeMillis()
+                if (detectedTextValue == previousDetectedText) {
+                    if (!conversionTriggered && currentTime - detectionStartTime >= 2000) {
+                        // Detected text has been the same for more than 2 seconds
+                        conversionTriggered = true
+                        // Perform conversion
+                        coroutineScope.launch {
+                            cameraViewModel.onNumberDetected(detectedTextValue)
+                        }
+                    }
+                } else {
+                    // Detected text has changed
+                    previousDetectedText = detectedTextValue
+                    detectionStartTime = currentTime
+                    conversionTriggered = false
                 }
+                detectedText = detectedTextValue
+                textPosition = boundingBox
+                clipBorderColor = Color(0xFFFFD700)
             }
         )
 
-        TransparentClipLayout(
-            modifier = Modifier.fillMaxSize(),
-            width = captureAreaWidth,
-            height = captureAreaHeight,
-            offsetY = captureAreaOffsetY,
-            color = clipBorderColor
-        )
+
+        Box(
+            Modifier.fillMaxSize()
+        ) {
+
+            TransparentClipLayout(
+                modifier = Modifier.fillMaxSize(),
+                width = captureAreaWidth,
+                height = captureAreaHeight,
+                offsetY = captureAreaOffsetY,
+                color = clipBorderColor
+            )
+
+
+
+            if (converterUIStateCamera.detectedNumber != null) {
+                Log.d("Camera Screen", "if statment is triggered but no fucking text display ")
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(top = 100.dp)
+
+                ) { Box(
+                    modifier = Modifier
+                        .background(Color.Gray.copy(alpha = 0.7f))
+                        .clip(RoundedCornerShape(40.dp))
+
+                ) {
+                    Text(
+                        text = "Detected Number: ${converterUIStateCamera.detectedNumber}",
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineLarge
+                    )
+                }
+                }
+            }
+
+        }
+
+
+
+
+
+
 
 
         Box(
@@ -147,43 +257,37 @@ import kotlinx.coroutines.withContext
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-            } else {
-
-
             }
         }
 
 
+//         Display the conversion rate in a grey box when conversion happens
+//        if (converterUIStateCamera.detectedNumber != null) {
+//            Box(
+//                modifier = Modifier
+//                    .align(Alignment.Center)
+//                    .background(Color.Gray.copy(alpha = 0.7f))
+//                    .padding(16.dp)
+//
+//            ) {
+//                Text(
+//                    text = "Detected Number: ${converterUIStateCamera.detectedNumber}",
+//                    color = Color.White,
+//                    style = MaterialTheme.typography.headlineLarge
+//                )
+//            }
+//            }
+//
+        }
 
-        if (detectedText.isNotEmpty() && textPosition != null) {
 
-
-            val xOffset = with(density) { textPosition!!.left.toDp() }
-            val yOffset = with(density) { textPosition!!.top.toDp() }
-            val width = with(density) { textPosition!!.width().toDp() }
-            val height = with(density) { textPosition!!.height().toDp() }
-
-
-            // Display the conversion rate in a grey box when conversion happens
-            if (conversionRate.isNotEmpty()) {
-                Log.d("TextDetection", "Detected Rate: $conversionRate")
-
-                val convertedYOffset = with(density) { (textPosition!!.bottom + 16).toDp() }
-                Box(
-                    modifier = Modifier
-                        .offset(x = xOffset, y = convertedYOffset)
-                        .background(Color.Gray.copy(alpha = 0.9f)) // Grey background
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = "Converted: $conversionRate",
-                        color = Color.White
-                    )
-                }
-            }
+        if (detectedText != previousDetectedText) {
+            conversionTriggered = false
+            // Reset other states if necessary
         }
     }
-}
+
+
 
 
 suspend fun getFirstImageFromGallery(context: android.content.Context): Uri? {
@@ -241,17 +345,31 @@ fun DropdownMenuItemRow(
     ,modifier: Modifier = Modifier) {
     Row {
         DropdownMenuSpinner(
-            optionsList = currencyOptions
-            , selectedCurrency = selectedCurrency
+            optionsList = currencyOptions,
+            selectedCurrency = selectedCurrency,
+            modifier = Modifier.weight(1f)
+                .padding(start = 10.dp,
+                         end = 10.dp),
         ) {
                 currency ->
             onCurrencyChange(currency)
 
         }
 
+        IconButton(
+            onClick = {},
+        ) {
+            Icon(painter = painterResource(R.drawable.switch_sides_button),
+                contentDescription = "Switch Currency Place")
+        }
+
+
         DropdownMenuSpinner(
             optionsList = currencyOptions,
-            selectedCurrency = selectedCurrency
+            selectedCurrency = selectedCurrency,
+            modifier = Modifier.weight(1f)
+                .padding(start = 10.dp,
+                    end = 10.dp),
         ) {
             currency ->
             onCurrencyChange(currency)

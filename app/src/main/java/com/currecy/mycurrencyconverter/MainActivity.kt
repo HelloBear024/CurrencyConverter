@@ -3,6 +3,9 @@ package com.currecy.mycurrencyconverter
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -17,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -28,9 +30,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -68,7 +75,9 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .windowInsetsPadding(WindowInsets.navigationBars)
                     ) {
+
                         MainScreen(currencyDao = currencyDao)
+
                     }
                 }
             }
@@ -84,11 +93,20 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MainScreen(currencyDao: CurrencyRateDao) {
         val navController = rememberNavController()
+        var selectedScreen by remember { mutableStateOf(AppScreen.ConversionTextView) }
+
         Box {
             Scaffold(
                 topBar = { TopAppBar() },
                 bottomBar = {
-                    BottomNavigationBar(navController = navController)
+                    BottomNavigationBar(
+                        navController = navController,
+                        selectedScreen = selectedScreen,
+                        onScreenSelected = { screen ->
+                            selectedScreen = screen
+                            navController.navigate(screen.name)
+                        }
+                    )
                 },
                 content = { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding)) {
@@ -110,19 +128,41 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
-            // Place FAB overlapping the BottomAppBar
+            val fabScale by animateFloatAsState(
+                targetValue = if (selectedScreen == AppScreen.ConversionCamera) 1.2f else 1f
+            )
+
+            val fabOffsetY by animateDpAsState(
+                targetValue = if (selectedScreen == AppScreen.ConversionCamera) (-37).dp else (-42).dp
+            )
+
+
             FloatingActionButton(
-                onClick = { navController.navigate(AppScreen.ConversionCamera.name) },
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary,
+                onClick = {
+                    selectedScreen = AppScreen.ConversionCamera
+                    navController.navigate(AppScreen.ConversionCamera.name)
+                },
+                containerColor = if (selectedScreen == AppScreen.ConversionCamera)
+                    MaterialTheme.colorScheme.onTertiary
+                else
+                    MaterialTheme.colorScheme.tertiary,
+
+
+
+                contentColor = if (selectedScreen == AppScreen.ConversionCamera)
+                    MaterialTheme.colorScheme.onSurface
+                else
+                    MaterialTheme.colorScheme.outlineVariant,
                 shape = CircleShape,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .offset(y = (-28).dp) // Adjust offset to position FAB correctly
+                    .offset(y = fabOffsetY)
+                    .size(65.dp * fabScale) // Adjust offset to position FAB correctly
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.photo),
-                    contentDescription = "Camera"
+                    contentDescription = "Camera",
+                    modifier = Modifier.size(40.dp * fabScale)
                 )
             }
         }
@@ -155,193 +195,102 @@ class MainActivity : ComponentActivity() {
     }
 
 
-//    @Composable
-//    fun BottomNavigationBar(navController: NavHostController) {
-//        BottomAppBar(
-//            containerColor = MaterialTheme.colorScheme.primaryContainer,
-//            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-//        ) {
-//            // Left IconButton
-//            IconButton(
-//                onClick = { navController.navigate(AppScreen.ConversionTextView.name) },
-//                modifier = Modifier.weight(1f)
-//            ) {
-//                Icon(
-//                    painter = painterResource(R.drawable.home),
-//                    contentDescription = "Home",
-//                    tint = MaterialTheme.colorScheme.primary
-//                )
-//            }
-//
-//            Spacer(modifier = Modifier.weight(1f)) // This spacer centers the FAB
-//
-//            // Right IconButton
-//            IconButton(
-//                onClick = { navController.navigate(AppScreen.Charts.name) },
-//                modifier = Modifier.weight(1f)
-//            ) {
-//                Icon(
-//                    painter = painterResource(id = R.drawable.monitor),
-//                    contentDescription = "Charts",
-//                    tint = MaterialTheme.colorScheme.surfaceTint
-//                )
-//            }
-//        }
-//    }
-
     @Composable
-    fun BottomNavigationBar(navController: NavHostController) {
-        val fabSize = 56.dp // Default FAB size
-        val fabMargin = 8.dp // Margin between FAB and BottomAppBar
+    fun BottomNavigationBar(
+        navController: NavHostController,
+        selectedScreen: AppScreen,
+        onScreenSelected: (AppScreen) -> Unit
+    ) {
+        val fabSize = 75.dp
+        val fabMargin = 8.dp
         val cutoutRadius = with(LocalDensity.current) { (fabSize / 2 + fabMargin).toPx() }
+        val cornerRadius = with(LocalDensity.current) { 30.dp.toPx()}
 
         Surface(
-            shape = Screen(cutoutRadius),
-            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = Screen(cutoutRadius, cornerRadius),
+            color = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-//            elevation = 4.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp) // Adjust height as needed
+                .height(75.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clip(
-                    RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                modifier = Modifier
                     .padding(vertical = 15.dp, horizontal = 15.dp)
             ) {
-                IconButton(
-                    onClick = { navController.navigate(AppScreen.ConversionTextView.name) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.home),
-                        contentDescription = "Home",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-
                 Spacer(modifier = Modifier.weight(1f))
 
-                IconButton(
-                    onClick = { navController.navigate(AppScreen.Charts.name) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.monitor),
-                        contentDescription = "Charts",
-                        tint = MaterialTheme.colorScheme.surfaceTint
-                    )
-                }
+                NavigationIcon(
+                    isSelected = selectedScreen == AppScreen.ConversionTextView,
+                    onClick = {
+                        onScreenSelected(AppScreen.ConversionTextView)
+                    },
+                    painter = painterResource(R.drawable.home),
+                    contentDescription = "Home",
+                    defaultTint = MaterialTheme.colorScheme.inverseSurface,
+                    selectedTint = MaterialTheme.colorScheme.tertiary // Adjust as needed
+                )
+
+                Spacer(modifier = Modifier.weight(3f))
+
+                // Charts Icon
+                NavigationIcon(
+                    isSelected = selectedScreen == AppScreen.Charts,
+                    onClick = {
+                        onScreenSelected(AppScreen.Charts)
+                    },
+                    painter = painterResource(id = R.drawable.monitor),
+                    contentDescription = "Charts",
+                    defaultTint = MaterialTheme.colorScheme.inverseSurface,
+                    selectedTint = MaterialTheme.colorScheme.tertiary // Adjust as needed
+                )
+                Spacer(modifier = Modifier.weight(1f))
+
+            }
             }
         }
     }
 
 
 
+    @Composable
+    fun NavigationIcon(
+        isSelected: Boolean,
+        onClick: () -> Unit,
+        painter: Painter,
+        contentDescription: String,
+        defaultTint: Color,
+        selectedTint: Color
+    ) {
+        val size by animateDpAsState(
+            targetValue = if (isSelected) 48.dp else 40.dp
+        )
+        val tint by animateColorAsState(
+            targetValue = if (isSelected) selectedTint else defaultTint
+        )
 
-//    @Composable
-//    fun BottomNavigationBar(navController: NavHostController, modifier: Modifier = Modifier) {
-//
-//        val currentBackStackEntry by navController.currentBackStackEntryAsState()  // Get current back stack
-//        val currentDestination = currentBackStackEntry?.destination
-//
-//        var navNum by remember {
-//            mutableStateOf(0)
-//        }
-//
-//        Row(
-//            modifier = modifier
-//                .fillMaxWidth()
-//                .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
-//                .background(MaterialTheme.colorScheme.primaryContainer)
-//                .padding(vertical = 15.dp, horizontal = 15.dp),
-//            horizontalArrangement = Arrangement.SpaceBetween,
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            Spacer(modifier = Modifier.weight(1f))
-//
-//            if (navNum == 0) {
-//                IconButton(
-//                    onClick = { navController.navigate(AppScreen.ConversionTextView.name) },
-//                    modifier = Modifier.size(45.dp)
-//                ) {
-//                    Icon(
-//                        painter = painterResource(R.drawable.home),
-//                        contentDescription = "home",
-//                        tint = MaterialTheme.colorScheme.primary,
-//                        modifier = Modifier
-//                            .size(45.dp)
-//                    )
-//                }
-//            } else {
-//                IconButton(onClick = { navNum = 0 }) {
-//                    Icon(
-//                        painter = painterResource(id = R.drawable.home),
-//                        contentDescription = "home",
-//                        tint = MaterialTheme.colorScheme.primary,
-//                        modifier = Modifier
-//                            .size(25.dp)
-//                    )
-//                }
-//            }
-//
-//            Spacer(modifier = Modifier.weight(1f))
-//
-//
-//            if (navNum == 1) {
-//
-//                IconButton(onClick = { navController.navigate(AppScreen.ConversionCamera.name) }) {
-//                    Icon(
-//                        painter = painterResource(id = R.drawable.photo),
-//                        contentDescription = "home",
-//                        tint = MaterialTheme.colorScheme.secondary,
-//                        modifier = Modifier.size(25.dp)
-//                    )
-//                }
-//            } else {
-//                IconButton(onClick = { navNum = 1 }) {
-//                    Icon(
-//                        painter = painterResource(id = R.drawable.photo),
-//                        contentDescription = "home",
-//                        tint = MaterialTheme.colorScheme.secondary,
-//                        modifier = Modifier.size(45.dp)
-//                    )
-//                }
-//            }
-//
-//            Spacer(modifier = Modifier.weight(1f))
-//
-//            if (navNum == 2) {
-//
-//                IconButton(onClick = { /*TODO*/ }) {
-//                    Icon(
-//                        painter = painterResource(id = R.drawable.monitor),
-//                        contentDescription = "home",
-//                        tint = MaterialTheme.colorScheme.secondary,
-//                        modifier = Modifier.size(25.dp)
-//                    )
-//                }
-//            } else {
-//                IconButton(onClick = { navNum = 2 }) {
-//                    Icon(
-//                        painter = painterResource(id = R.drawable.monitor),
-//                        contentDescription = "home",
-//                        tint = MaterialTheme.colorScheme.surfaceTint,
-//                        modifier = Modifier.size(45.dp)
-//                    )
-//                }
-//            }
-//            Spacer(modifier = Modifier.weight(1f))
-//        }
-//    }
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier
+                .size(size)
+        ) {
+            Icon(
+                painter = painter,
+                contentDescription = contentDescription,
+                tint = tint,
+                modifier = Modifier.size(size)
+            )
+        }
+    }
+
 
     enum class AppScreen() {
         ConversionTextView,
         ConversionCamera,
         Charts
     }
-}
+
 
 
 

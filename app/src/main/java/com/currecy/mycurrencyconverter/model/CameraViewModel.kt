@@ -18,7 +18,7 @@ class CameraViewModel(
         val number = detectedText.toDoubleOrNull()
         if (number != null) {
             _converterUIState.update { it.copy(detectedNumber = number) }
-            convertCurrency()
+//            convertCurrency()
         }
     }
 
@@ -31,12 +31,25 @@ class CameraViewModel(
         convertCurrency()
     }
 
-     suspend fun convertCurrency(): String {
-        val rates = currencyDao.getRateForCurrency(
-            _converterUIState.value.selectedCurrencyFrom,
-        )
+    fun onAmountChange() {
 
-        return ""
+    }
+
+     suspend fun convertCurrency() {
+         val fromCurrency = _converterUIState.value.selectedCurrencyFrom
+         val toCurrency = _converterUIState.value.selectedCurrencyTo
+         val amount = _converterUIState.value.detectedNumber ?: return
+
+         val fromRate = currencyDao.getRateForCurrency(fromCurrency)
+         val toRate = currencyDao.getRateForCurrency(toCurrency)
+
+         if (fromRate != null && toRate != null) {
+             val convertedAmount = amount * (toRate.dec() / fromRate.dec())
+             _converterUIState.update { it.copy(conversionResult = convertedAmount.toString()) }
+         } else {
+             _converterUIState.update { it.copy(conversionResult = "Conversion failed") }
+         }
+     }
     }
 
     fun getConversionRate(): String {
@@ -44,4 +57,3 @@ class CameraViewModel(
     }
 
 
-}
