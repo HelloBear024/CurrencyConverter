@@ -1,5 +1,6 @@
 package com.currecy.mycurrencyconverter.model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.currecy.mycurrencyconverter.database.CurrencyRateDao
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,22 +19,20 @@ class CameraViewModel(
         val number = detectedText.toDoubleOrNull()
         if (number != null) {
             _converterUIState.update { it.copy(detectedNumber = number) }
-//            convertCurrency()
+            convertCurrency()
         }
     }
 
-    suspend fun onCurrencyChange(newCurrency: String, index: Int) {
-        if (index == 0) {
-            _converterUIState.update { it.copy(selectedCurrencyFrom = newCurrency) }
-        } else {
-            _converterUIState.update { it.copy(selectedCurrencyTo = newCurrency) }
-        }
+    suspend fun onCurrencyFromChange(newCurrency: String) {
+        _converterUIState.update { it.copy(selectedCurrencyFrom = newCurrency) }
         convertCurrency()
     }
 
-    fun onAmountChange() {
-
+    suspend fun onCurrencyToChange(newCurrency: String) {
+        _converterUIState.update { it.copy(selectedCurrencyTo = newCurrency) }
+        convertCurrency()
     }
+
 
      suspend fun convertCurrency() {
          val fromCurrency = _converterUIState.value.selectedCurrencyFrom
@@ -43,17 +42,25 @@ class CameraViewModel(
          val fromRate = currencyDao.getRateForCurrency(fromCurrency)
          val toRate = currencyDao.getRateForCurrency(toCurrency)
 
+         if (fromRate == null || toRate == null) {
+             Log.d("CurrencyConversion", "Could not retrieve rates. From Rate or To Rate is null.")
+         }
+
          if (fromRate != null && toRate != null) {
-             val convertedAmount = amount * (toRate.dec() / fromRate.dec())
+             var convertedAmount = amount * (toRate.dec() / fromRate.dec())
+             convertedAmount = formatToTwoDecimals(convertedAmount)
              _converterUIState.update { it.copy(conversionResult = convertedAmount.toString()) }
          } else {
              _converterUIState.update { it.copy(conversionResult = "Conversion failed") }
          }
      }
+
+
+    private fun formatToTwoDecimals(value: Double): Double {
+        return "%.2f".format(value).toDouble()
+    }
     }
 
-    fun getConversionRate(): String {
-        return ""
-    }
+
 
 

@@ -18,14 +18,11 @@ interface CurrencyRateDao {
     fun getRecentRates(startDate: String): LiveData<List<CurrencyRate>>
 
     @Query("SELECT COUNT(*) FROM currency_rates")
-    suspend fun getCount(): Int  // This is the method to get the count of entries
+    suspend fun getCount(): Int
 
     @Query("SELECT MIN(date) FROM currency_rates")
     suspend fun getOldestDate(): String?
-//    @Query("SELECT rate FROM currency_rates WHERE currencyCode = :currencyCode LIMIT 1")
-//    suspend fun getRateForCurrency(currencyCode: String): Double?
 
-    @Query("SELECT rate FROM currency_rates WHERE LOWER(currencyCode) = LOWER(:currency) LIMIT 1")
+    @Query("SELECT rate FROM currency_rates WHERE UPPER(currencyCode) = UPPER(:currency) ORDER BY date DESC LIMIT 1")
     suspend fun getRateForCurrency(currency: String): Double?
-
 }

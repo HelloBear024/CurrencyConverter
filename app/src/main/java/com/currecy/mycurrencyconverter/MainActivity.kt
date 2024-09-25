@@ -43,7 +43,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -54,18 +53,17 @@ import com.currecy.mycurrencyconverter.ui.CameraConversionScreen
 import com.currecy.mycurrencyconverter.ui.MainScreenCurrencyConverterEditTextView
 import com.currecy.mycurrencyconverter.ui.Screen
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-    private lateinit var currencyDao: CurrencyRateDao
+//    private lateinit var currencyDao: CurrencyRateDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        lifecycleScope.launch {
-            val db = AppDatabase.getDatabase(applicationContext)
 
-            currencyDao = db.currencyRateDao()
+            val db = AppDatabase.getDatabase(applicationContext)
+            val currencyDao = db.currencyRateDao()
+
 
             setContent {
                 MyCurrencyConverterTheme {
@@ -82,7 +80,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
+
 
     private fun enableEdgeToEdge() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -95,6 +93,7 @@ class MainActivity : ComponentActivity() {
         val navController = rememberNavController()
         var selectedScreen by remember { mutableStateOf(AppScreen.ConversionTextView) }
 
+//        TestCurrencyDao(currencyDao)
         Box {
             Scaffold(
                 topBar = { TopAppBar() },
@@ -283,6 +282,7 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
 
 
     enum class AppScreen() {

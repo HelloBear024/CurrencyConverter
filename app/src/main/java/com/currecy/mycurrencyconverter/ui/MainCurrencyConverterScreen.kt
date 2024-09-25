@@ -24,6 +24,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +34,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -168,8 +168,15 @@ fun CurrencySelectorItem(
                 onValueChange = {},
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = ExposedDropdownMenuDefaults.textFieldColors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+                    focusedContainerColor = MaterialTheme.colorScheme.tertiary,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.onTertiary,
+                    focusedTextColor = MaterialTheme.colorScheme.outlineVariant,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTrailingIconColor = MaterialTheme.colorScheme.tertiary,
+                    focusedTrailingIconColor = MaterialTheme.colorScheme.onTertiary,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.tertiary,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.onTertiary
+
                 ),
                 shape = RoundedCornerShape(15.dp),
                 singleLine = true,
@@ -180,7 +187,7 @@ fun CurrencySelectorItem(
             if (expanded) {
                 DropdownMenu(
                     modifier = Modifier
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.onTertiary)
                         .exposedDropdownSize(false),
                     properties = PopupProperties(focusable = false),
                     expanded = expanded,
@@ -218,6 +225,17 @@ fun CurrencySelectorItem(
             onValueChange = onValueChange,
             label = { Text(label) },
             shape = RoundedCornerShape(15.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+
+                focusedTextColor = MaterialTheme.colorScheme.onTertiary,
+                unfocusedTextColor = MaterialTheme.colorScheme.tertiary,
+
+                focusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onTertiary,
+
+                focusedLabelColor = MaterialTheme.colorScheme.tertiary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.tertiary
+            ),
             singleLine = true,
             keyboardOptions = keyboardOptions
         )
@@ -228,7 +246,9 @@ fun AddMoreContainersBtn(onClick: () -> Unit, modifier: Modifier = Modifier) {
     FloatingActionButton(
         onClick = { onClick() },
         containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-        modifier = Modifier.padding(16.dp).size(75.dp)
+        modifier = Modifier
+            .padding(16.dp)
+            .size(75.dp)
     ){
         Icon(
             Icons.Filled.Add,

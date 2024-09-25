@@ -1,11 +1,9 @@
 package com.currecy.mycurrencyconverter.database
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "currency_rates")
+@Entity(tableName = "currency_rates", primaryKeys = ["currencyCode", "date"])
 data class CurrencyRate(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val currencyCode: String,
     val rate: Double,
     val date: String

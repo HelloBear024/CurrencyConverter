@@ -3,6 +3,7 @@ package com.currecy.mycurrencyconverter.ui
 import android.content.ContentUris
 import android.graphics.RectF
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,11 +48,16 @@ import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
 import com.currecy.mycurrencyconverter.database.CurrencyRateDao
 import com.currecy.mycurrencyconverter.model.CameraViewModel
 import com.currecy.mycurrencyconverter.model.CurrencyViewModelFactory
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
     fun CameraConversionScreen(currencyDao: CurrencyRateDao) {
     val cameraViewModel: CameraViewModel = viewModel(
@@ -66,9 +73,7 @@ import kotlinx.coroutines.withContext
     // State for detected text and its position
     var detectedText by remember { mutableStateOf("") }
     var textPosition by remember { mutableStateOf<android.graphics.Rect?>(null) }
-    var conversionRate by remember { mutableStateOf("") } // Conversion rate to be shown in a grey box
     var layoutSize by remember { mutableStateOf(IntSize(0, 0)) }
-    var isFocused by remember { mutableStateOf(false) }
 
     // Define the capture area (in dp) where text detection will occur
     val captureAreaWidth = 300.dp
@@ -95,39 +100,42 @@ import kotlinx.coroutines.withContext
     )
 
     val context = LocalContext.current
+
+    val permissionState = rememberPermissionState(
+        permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            android.Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            android.Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+    )
+
+    LaunchedEffect(permissionState.status) {
+        if (permissionState.status.isGranted) {
+            firstImageUri = getFirstImageFromGallery(context)
+        } else if (permissionState.status.shouldShowRationale) {
+            // Show rationale to the user
+            // You can display a dialog explaining why the permission is needed
+        } else {
+            // Permission denied permanently
+            // You can guide the user to app settings to enable the permission
+        }
+    }
+
     LaunchedEffect(Unit) {
-        firstImageUri = getFirstImageFromGallery(context)
+        // Request permission if not granted
+        if (!permissionState.status.isGranted) {
+            permissionState.launchPermissionRequest()
+        } else {
+            // Only attempt to get the image if permission is granted
+            firstImageUri = getFirstImageFromGallery(context)
+        }
     }
 
 
-//    LaunchedEffect(layoutSize) {
-//        if (layoutSize.width > 0 && layoutSize.height > 0) {
-//            val captureAreaLeftPx = ((layoutSize.width - with(density) { captureAreaWidth.toPx() }) / 2f)
-//            val captureAreaTopPx = with(density) { captureAreaOffsetY.toPx() }
-//            val captureAreaRightPx = captureAreaLeftPx + with(density) { captureAreaWidth.toPx() }
-//            val captureAreaBottomPx = captureAreaTopPx + with(density) { captureAreaHeight.toPx() }
-//
-//            rectangleBounds = RectF(
-//                captureAreaLeftPx,
-//                captureAreaTopPx,
-//                captureAreaRightPx,
-//                captureAreaBottomPx
-//            )
-//
-//            Log.d("RectangleBounds", "rectangleBounds: $rectangleBounds")
-//        } else {
-//            Log.d("RectangleBounds", "layoutSize not ready yet")
-//        }
-//    }
-
-
-    DropdownMenuItemRow(
-        currencyOptions = CurrencyOptionsData.options,
-        onCurrencyChange = { newAmount ->
-            cameraViewModel.onAmountChange()
-        },
-        selectedCurrency = converterUIStateCamera.selectedCurrencyTo
-    )
+    LaunchedEffect(Unit) {
+        firstImageUri = getFirstImageFromGallery(context)
+        Log.d("FirstImageUri", "First Image URI: $firstImageUri")
+    }
 
 
     BoxWithConstraints(
@@ -151,7 +159,6 @@ import kotlinx.coroutines.withContext
                 rectRight,
                 rectBottom
             )
-
             Log.d("RectangleBounds", "rectangleBounds: $rectangleBounds")
         }
 
@@ -183,6 +190,29 @@ import kotlinx.coroutines.withContext
         )
 
 
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 30.dp)
+        ) {
+
+            DropdownMenuItemRow(
+                currencyOptions = CurrencyOptionsData.options,
+                selectedCurrencyFrom = converterUIStateCamera.selectedCurrencyFrom,
+                selectedCurrencyTo = converterUIStateCamera.selectedCurrencyTo,
+                onCurrencyFromChange = { newCurrency ->
+                    coroutineScope.launch {
+                        cameraViewModel.onCurrencyFromChange(newCurrency)
+                    }
+                },
+                onCurrencyToChange = { newCurrency ->
+                    coroutineScope.launch {
+                        cameraViewModel.onCurrencyToChange(newCurrency)
+                    }
+                }
+            )
+        }
+
+
         Box(
             Modifier.fillMaxSize()
         ) {
@@ -197,7 +227,7 @@ import kotlinx.coroutines.withContext
 
 
 
-            if (converterUIStateCamera.detectedNumber != null) {
+            if (converterUIStateCamera.detectedNumber != null && converterUIStateCamera.conversionResult.isNotEmpty())  {
                 Log.d("Camera Screen", "if statment is triggered but no fucking text display ")
                 Box(
                     modifier = Modifier
@@ -211,7 +241,7 @@ import kotlinx.coroutines.withContext
 
                 ) {
                     Text(
-                        text = "Detected Number: ${converterUIStateCamera.detectedNumber}",
+                        text = "${converterUIStateCamera.selectedCurrencyTo.uppercase()}: ${converterUIStateCamera.conversionResult}",
                         color = Color.White,
                         style = MaterialTheme.typography.headlineLarge
                     )
@@ -220,13 +250,6 @@ import kotlinx.coroutines.withContext
             }
 
         }
-
-
-
-
-
-
-
 
         Box(
             modifier = Modifier
@@ -237,7 +260,7 @@ import kotlinx.coroutines.withContext
                 )// Square box size
                 .background(
                     Color.Gray,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(15.dp)
                 ) // Background color of the button
                 .align(Alignment.BottomStart) // Align to bottom-left corner
                 .clickable {
@@ -254,36 +277,19 @@ import kotlinx.coroutines.withContext
                         .crossfade(true)
                         .build(),
                     contentDescription = "First image from gallery",
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(15.dp)),
                     contentScale = ContentScale.Crop
                 )
             }
         }
 
-
-//         Display the conversion rate in a grey box when conversion happens
-//        if (converterUIStateCamera.detectedNumber != null) {
-//            Box(
-//                modifier = Modifier
-//                    .align(Alignment.Center)
-//                    .background(Color.Gray.copy(alpha = 0.7f))
-//                    .padding(16.dp)
-//
-//            ) {
-//                Text(
-//                    text = "Detected Number: ${converterUIStateCamera.detectedNumber}",
-//                    color = Color.White,
-//                    style = MaterialTheme.typography.headlineLarge
-//                )
-//            }
-//            }
-//
         }
 
 
         if (detectedText != previousDetectedText) {
             conversionTriggered = false
-            // Reset other states if necessary
         }
     }
 
@@ -317,7 +323,7 @@ suspend fun getFirstImageFromGallery(context: android.content.Context): Uri? {
     }
 }
 
-// Composable that shows the selected image
+
 @Composable
 fun ShowSelectedImageScreen(imageUri: Uri) {
     Box(
@@ -337,24 +343,26 @@ fun ShowSelectedImageScreen(imageUri: Uri) {
         )
     }
 }
+
+
 @Composable
 fun DropdownMenuItemRow(
     currencyOptions: List<Pair<String, String>>,
-    onCurrencyChange: (String) -> Unit,
-    selectedCurrency: String
-    ,modifier: Modifier = Modifier) {
+    selectedCurrencyFrom: String,
+    selectedCurrencyTo: String,
+    onCurrencyFromChange: (String) -> Unit,
+    onCurrencyToChange: (String) -> Unit,
+    modifier: Modifier = Modifier) {
     Row {
         DropdownMenuSpinner(
             optionsList = currencyOptions,
-            selectedCurrency = selectedCurrency,
-            modifier = Modifier.weight(1f)
+            selectedCurrency = selectedCurrencyFrom,
+            modifier = Modifier
+                .weight(1f)
                 .padding(start = 10.dp,
                          end = 10.dp),
-        ) {
-                currency ->
-            onCurrencyChange(currency)
-
-        }
+            onCurrencySelected = onCurrencyFromChange
+        )
 
         IconButton(
             onClick = {},
@@ -366,14 +374,13 @@ fun DropdownMenuItemRow(
 
         DropdownMenuSpinner(
             optionsList = currencyOptions,
-            selectedCurrency = selectedCurrency,
-            modifier = Modifier.weight(1f)
+            selectedCurrency = selectedCurrencyTo,
+            modifier = Modifier
+                .weight(1f)
                 .padding(start = 10.dp,
                     end = 10.dp),
-        ) {
-            currency ->
-            onCurrencyChange(currency)
-        }
+            onCurrencySelected = onCurrencyToChange
+        )
     }
     
 }

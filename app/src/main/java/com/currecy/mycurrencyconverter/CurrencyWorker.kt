@@ -12,9 +12,13 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class CurrencyWorker(context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams)
+class CurrencyWorker(
+    context: Context,
+    workerParams: WorkerParameters
+) : CoroutineWorker(context, workerParams)
 {
     private val currencyDao = AppDatabase.getDatabase(context).currencyRateDao()
+
     override suspend fun doWork(): Result {
         Log.d("CurrencyWorker", "Worker started")
          return try {
@@ -23,6 +27,7 @@ class CurrencyWorker(context: Context, workerParams: WorkerParameters) : Corouti
             val isFirstRun = isFirstRun()
 
             if (isFirstRun) {
+                Log.d("CurrencyWorker", "First run detected, fetching 30 days of data")
                 for (i in 0..29) {
                     val date = getOldDate(i)
                     fetchAndStoreDataForDate(date)
@@ -30,13 +35,10 @@ class CurrencyWorker(context: Context, workerParams: WorkerParameters) : Corouti
                 markFirstRunComplete()
                 Log.d("Currency Worker:  ", "is first run called ")
             }
-
-
-            fetchAndStoreDataForDate(today)
-
+             fetchAndStoreDataForDate(today)
              deleteOldDataIfNecessary()
 
-            Result.success()
+             Result.success()
 
         } catch (e: Exception) {
             Log.e("CurrencyWorker", "Error fetching currency data: ${e.message}")
@@ -48,7 +50,12 @@ class CurrencyWorker(context: Context, workerParams: WorkerParameters) : Corouti
         val url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@$date/v1/currencies/eur.json"
         Log.d("CurrencyWorker", "Fetching data from URL: $url")
 
-        val response = RetrofitInstance.api.getCurrencyRates(url)
+        val response = try {
+            RetrofitInstance.api.getCurrencyRates(url)
+        } catch (e: Exception) {
+            Log.e("CurrencyWorker", "Network request failed: ${e.message}")
+            return
+        }
 
         if (response.eur != null) {
 
