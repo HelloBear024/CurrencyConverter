@@ -25,4 +25,8 @@ interface CurrencyRateDao {
 
     @Query("SELECT rate FROM currency_rates WHERE UPPER(currencyCode) = UPPER(:currency) ORDER BY date DESC LIMIT 1")
     suspend fun getRateForCurrency(currency: String): Double?
+
+
+
+
 }

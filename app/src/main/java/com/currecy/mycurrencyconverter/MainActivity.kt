@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -29,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,20 +38,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.currecy.mycurrencyconverter.database.AppDatabase
 import com.currecy.mycurrencyconverter.database.CurrencyRateDao
+import com.currecy.mycurrencyconverter.model.CardCurrencyViewModel
+import com.currecy.mycurrencyconverter.model.CurrencyViewModelFactory
+import com.currecy.mycurrencyconverter.ui.AddAndSearchChartsApp
 import com.currecy.mycurrencyconverter.ui.CameraConversionScreen
+import com.currecy.mycurrencyconverter.ui.DetailScreen
 import com.currecy.mycurrencyconverter.ui.MainScreenCurrencyConverterEditTextView
 import com.currecy.mycurrencyconverter.ui.Screen
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
@@ -63,9 +74,19 @@ class MainActivity : ComponentActivity() {
 
             val db = AppDatabase.getDatabase(applicationContext)
             val currencyDao = db.currencyRateDao()
+            val userPreferenceCurrencyDao = db.userCurrencyPreferenceDao()
 
+            val viewModelFactory = CurrencyViewModelFactory(
+                currencyDao = currencyDao,
+                userPreferenceCurrencyDao = userPreferenceCurrencyDao
+            )
 
-            setContent {
+            val cardCurrencyViewModel: CardCurrencyViewModel = ViewModelProvider(
+                this,
+                viewModelFactory
+            ).get(CardCurrencyViewModel::class.java)
+
+        setContent {
                 MyCurrencyConverterTheme {
 
                     Surface(
@@ -74,8 +95,10 @@ class MainActivity : ComponentActivity() {
                             .windowInsetsPadding(WindowInsets.navigationBars)
                     ) {
 
-                        MainScreen(currencyDao = currencyDao)
-
+                        MainScreen(
+                            currencyDao = currencyDao,
+                            cardCurrencyViewModel = cardCurrencyViewModel
+                        )
                     }
                 }
             }
@@ -89,14 +112,18 @@ class MainActivity : ComponentActivity() {
 
 
     @Composable
-    fun MainScreen(currencyDao: CurrencyRateDao) {
+    fun MainScreen(
+        currencyDao: CurrencyRateDao,
+        cardCurrencyViewModel: CardCurrencyViewModel
+        ) {
         val navController = rememberNavController()
         var selectedScreen by remember { mutableStateOf(AppScreen.ConversionTextView) }
 
 //        TestCurrencyDao(currencyDao)
         Box {
             Scaffold(
-                topBar = { TopAppBar() },
+                topBar = { TopAppBar()
+                         },
                 bottomBar = {
                     BottomNavigationBar(
                         navController = navController,
@@ -120,7 +147,15 @@ class MainActivity : ComponentActivity() {
                                 CameraConversionScreen(currencyDao = currencyDao)
                             }
                             composable(AppScreen.Charts.name) {
-                                // ChartsScreen()
+                                AddAndSearchChartsApp(cardCurrencyViewModel = cardCurrencyViewModel, navController = navController)
+                            }
+                            composable(
+                                route = "detail/{id}",
+                                arguments = listOf(navArgument("id") { type = NavType.IntType})
+                            ) {
+                                backStackEntry ->
+                                    val id = backStackEntry.arguments?.getInt("id") ?: 0
+                                DetailScreen(conversionId = id, cardCurrencyViewModel = cardCurrencyViewModel)
                             }
                         }
                     }
@@ -171,26 +206,39 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun TopAppBar(modifier: Modifier = Modifier) {
-        CenterAlignedTopAppBar(
-            title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .padding(8.dp),
-                        painter = painterResource(R.drawable.exchange),
-                        contentDescription = null )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(bottomEnd = 20.dp , bottomStart = 20.dp))
 
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.displayLarge
-                    )
-                }
-            },
-            modifier = modifier
-        )
+        ) {
+            CenterAlignedTopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .padding(8.dp),
+                            painter = painterResource(R.drawable.currency_exchange),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.tertiary),
+                            contentDescription = null
+                        )
+
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.displayLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                modifier = modifier.fillMaxWidth(),
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                ),
+            )
+        }
     }
 
 
@@ -283,12 +331,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
-
     enum class AppScreen() {
         ConversionTextView,
         ConversionCamera,
-        Charts
+        Charts,
+        Details
     }
 
 

@@ -77,6 +77,7 @@ dependencies {
     implementation ("com.google.mlkit:text-recognition:16.0.0")
     debugImplementation ("androidx.room:room-testing:2.4.2")
     implementation("io.coil-kt:coil-compose:2.1.0")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.0")
     implementation ("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
 //    implementation(libs.androidx.material3.android)
     testImplementation(libs.junit)

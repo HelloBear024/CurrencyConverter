@@ -8,9 +8,10 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [CurrencyRate::class], version = 2, exportSchema = false)
-abstract class AppDatabase: RoomDatabase() {
+@Database(entities = [CurrencyRate::class, UserCurrencyPreference::class], version = 3, exportSchema = false)
+abstract class AppDatabase : RoomDatabase() {
     abstract fun currencyRateDao(): CurrencyRateDao
+    abstract fun userCurrencyPreferenceDao(): UserCurrencyPreferenceDao
 
     companion object {
         @Volatile
@@ -24,36 +25,48 @@ abstract class AppDatabase: RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "currency_database"
-                ).addMigrations(MIGRATION_1_2)
+                )
+                    .addMigrations(MIGRATION_2_3)
                     .build()
                 INSTANCE = instance
                 instance
             }
         }
 
-        private val MIGRATION_1_2 = object : Migration(1, 2) {
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Create a new table with the new schema
-                database.execSQL("""
-            CREATE TABLE IF NOT EXISTS currency_rates_new (
-                currencyCode TEXT NOT NULL,
-                rate REAL NOT NULL,
-                date TEXT NOT NULL,
-                PRIMARY KEY(currencyCode, date)
-            )
-        """.trimIndent())
+                // Migrate currency_rates table
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS currency_rates_new (
+                        currencyCode TEXT NOT NULL,
+                        rate REAL NOT NULL,
+                        date TEXT NOT NULL,
+                        PRIMARY KEY(currencyCode, date)
+                    )
+                """.trimIndent()
+                )
 
-                // Copy data from the old table to the new table
-                database.execSQL("""
-            INSERT INTO currency_rates_new (currencyCode, rate, date)
-            SELECT currencyCode, rate, date FROM currency_rates
-        """.trimIndent())
+                database.execSQL(
+                    """
+                    INSERT INTO currency_rates_new (currencyCode, rate, date)
+                    SELECT currencyCode, rate, date FROM currency_rates
+                """.trimIndent()
+                )
 
-                // Drop the old table
                 database.execSQL("DROP TABLE currency_rates")
-
-                // Rename the new table to the old table name
                 database.execSQL("ALTER TABLE currency_rates_new RENAME TO currency_rates")
+
+                // Migrate user_currency_preferences table by adding new columns with default values
+                database.execSQL(
+                    """
+            CREATE TABLE IF NOT EXISTS user_currency_preferences (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                firstCurrencyCode TEXT NOT NULL DEFAULT '',
+                secondCurrencyCode TEXT NOT NULL DEFAULT ''
+            )
+        """.trimIndent()
+                )
             }
         }
     }
