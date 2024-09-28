@@ -4,7 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.currecy.mycurrencyconverter.database.UserCurrencyPreference
-import com.currecy.mycurrencyconverter.database.UserCurrencyPreferenceDao
+import com.currecy.mycurrencyconverter.database.UserCurrencyPreferencesRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,15 +15,16 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class CardCurrencyViewModel (
-    private val userCurrencyPreferenceDao: UserCurrencyPreferenceDao
-    ) : ViewModel() {
+@HiltViewModel
+class CardCurrencyViewModel @Inject constructor (
+    private val userRepo: UserCurrencyPreferencesRepository
+) : ViewModel() {
 
     init {
         Log.d("CardCurrencyViewModel", "Initialized")
     }
 
-    val conversions: StateFlow<List<ChartCurrencyState>> = userCurrencyPreferenceDao.getAllCurrencyPreferences()
+    val conversions: StateFlow<List<ChartCurrencyState>> = userRepo.getAllPreferences()
         .map { preferences ->
             preferences.map { preference ->
                 ChartCurrencyState(
@@ -40,7 +43,7 @@ class CardCurrencyViewModel (
     fun addConversion(source: String, target: String) {
         Log.d("CardCurrencyViewModel", "Adding conversion: $source -> $target")
         viewModelScope.launch {try {
-            userCurrencyPreferenceDao.insert(
+            userRepo.addPreference(
                 UserCurrencyPreference(
                     firstCurrencyCode = source,
                     secondCurrencyCode = target
@@ -54,7 +57,7 @@ class CardCurrencyViewModel (
     }
 
     fun getConversionById(id: Int): Flow<ChartCurrencyState?> {
-        return userCurrencyPreferenceDao.getCurrencyPreferenceById(id)
+        return userRepo.getPreferenceById(id)
             .map { preference ->
                 preference?.let {
                     ChartCurrencyState(
@@ -72,7 +75,7 @@ class CardCurrencyViewModel (
         Log.d("CardCurrencyViewModel", "Deleting conversion: ${conversion.id}")
         viewModelScope.launch {
             try {
-                userCurrencyPreferenceDao.deleteById(conversion.id)
+                userRepo.deletePreference(conversion.id)
                 Log.d("CardCurrencyViewModel", "Conversion deleted successfully")
             } catch (e: Exception) {
                 Log.e("CardCurrencyViewModel", "Error deleting conversion", e)

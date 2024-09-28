@@ -33,13 +33,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
-import com.currecy.mycurrencyconverter.database.CurrencyRateDao
 import com.currecy.mycurrencyconverter.model.CameraViewModel
-import com.currecy.mycurrencyconverter.model.CurrencyViewModelFactory
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -53,12 +51,10 @@ import androidx.compose.ui.geometry.Rect as ComposeRect
 @Composable
 fun ImageConversionScreen(
     imageUri: Uri,
-    currencyDao: CurrencyRateDao,
+    viewModel: CameraViewModel = hiltViewModel(),
     onBack: () -> Unit
 ) {
-    val viewModel: CameraViewModel = viewModel(
-        factory = CurrencyViewModelFactory(currencyDao)
-    )
+
     val converterUIState by viewModel.converterUIState.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()

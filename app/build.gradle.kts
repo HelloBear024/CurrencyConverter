@@ -1,7 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    id("kotlin-kapt")
+    alias(libs.plugins.hilt.android.gradle.plugin)
+    id("kotlin-kapt");
 }
 
 android {
@@ -42,7 +43,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.10"
     }
     packaging {
         resources {
@@ -69,6 +70,19 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.navigation:navigation-compose:2.7.4")
+    implementation(libs.androidx.espresso.core)
+
+
+    implementation ("com.squareup:javapoet:1.13.0")
+
+    implementation (libs.hilt.android)
+    implementation(libs.androidx.hilt.common)
+    kapt(libs.hilt.compiler)
+    implementation (libs.androidx.hilt.navigation.compose)
+//    implementation (libs.androidx.hilt.lifecycle.viewmodel)
+
+//    implementation(libs.androidx.wear.complications.data)
+    implementation(libs.androidx.hilt.work)
     kapt("androidx.room:room-compiler:2.6.1")
     implementation("androidx.camera:camera-core:1.1.0")
     implementation("androidx.camera:camera-camera2:1.1.0")
@@ -79,7 +93,13 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.1.0")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.0")
     implementation ("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
-//    implementation(libs.androidx.material3.android)
+
+    implementation ("com.patrykandpatrick.vico:core:2.0.0-beta.1")
+    implementation("com.patrykandpatrick.vico:compose:2.0.0-beta.1")
+    implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-beta.1")
+    implementation("com.patrykandpatrick.vico:views:2.0.0-beta.1")
+
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

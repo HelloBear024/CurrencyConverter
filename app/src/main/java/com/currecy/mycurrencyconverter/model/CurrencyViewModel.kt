@@ -4,13 +4,20 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.currecy.mycurrencyconverter.database.CurrencyRateDao
+import com.currecy.mycurrencyconverter.database.CurrencyRatesRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class CurrencyViewModel(private val rates: CurrencyRateDao) : ViewModel() {
+
+@HiltViewModel
+class CurrencyViewModel @Inject constructor(
+    private val rates: CurrencyRatesRepository
+            ) : ViewModel() {
 
     private val _currencyRatesState = MutableStateFlow(ConverterUIState())
     val currencyRatesState: StateFlow<ConverterUIState> = _currencyRatesState.asStateFlow()
@@ -112,7 +119,6 @@ class CurrencyViewModel(private val rates: CurrencyRateDao) : ViewModel() {
         Log.d("CurrencyConversion", "Converted $amount from $fromCurrency to $toCurrency. Result = $result")
         return result
     }
-
 
     private fun formatToTwoDecimals(value: Double): Double {
         return "%.2f".format(value).toDouble()

@@ -40,14 +40,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.currecy.mycurrencyconverter.R
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
-import com.currecy.mycurrencyconverter.database.CurrencyRateDao
 import com.currecy.mycurrencyconverter.model.CameraViewModel
-import com.currecy.mycurrencyconverter.model.CurrencyViewModelFactory
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -60,12 +58,10 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraPreviewScreen(
-    currencyDao: CurrencyRateDao,
+    cameraViewModel: CameraViewModel = hiltViewModel(),
     onImageSelected: (Uri) -> Unit
 ) {
-    val cameraViewModel: CameraViewModel = viewModel(
-        factory = CurrencyViewModelFactory(currencyDao)
-    )
+
     val converterUIStateCamera by cameraViewModel.converterUIState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var previousDetectedText by remember { mutableStateOf("") }

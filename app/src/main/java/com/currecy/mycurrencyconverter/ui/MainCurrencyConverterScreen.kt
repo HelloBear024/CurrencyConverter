@@ -39,20 +39,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.currecy.mycurrencyconverter.R
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
-import com.currecy.mycurrencyconverter.database.CurrencyRateDao
 import com.currecy.mycurrencyconverter.model.CurrencyViewModel
-import com.currecy.mycurrencyconverter.model.CurrencyViewModelFactory
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
 
 
 @Composable
-    fun MainScreenCurrencyConverterEditTextView( currencyDao : CurrencyRateDao) {
-    val currencyViewModel: CurrencyViewModel = viewModel(
-        factory = CurrencyViewModelFactory(currencyDao)
-    )
+    fun MainScreenCurrencyConverterEditTextView( currencyViewModel: CurrencyViewModel = hiltViewModel()) {
 
     val converterUIState by currencyViewModel.currencyRatesState.collectAsState()
 
@@ -227,14 +222,17 @@ fun CurrencySelectorItem(
             shape = RoundedCornerShape(15.dp),
             colors = OutlinedTextFieldDefaults.colors(
 
-                focusedTextColor = MaterialTheme.colorScheme.onTertiary,
+                focusedTextColor = MaterialTheme.colorScheme.tertiary,
                 unfocusedTextColor = MaterialTheme.colorScheme.tertiary,
 
                 focusedBorderColor = MaterialTheme.colorScheme.tertiary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.onTertiary,
 
                 focusedLabelColor = MaterialTheme.colorScheme.tertiary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.tertiary
+                unfocusedLabelColor = MaterialTheme.colorScheme.tertiary,
+
+
+
             ),
             singleLine = true,
             keyboardOptions = keyboardOptions

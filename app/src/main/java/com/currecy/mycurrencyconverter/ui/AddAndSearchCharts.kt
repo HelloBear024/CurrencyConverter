@@ -58,6 +58,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
 import com.currecy.mycurrencyconverter.model.CardCurrencyViewModel
@@ -67,13 +68,13 @@ import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
 
 @Composable
 fun AddAndSearchChartsApp(
-    cardCurrencyViewModel: CardCurrencyViewModel,
-    navController: NavController
+    navController: NavController,
 ){
 
-    var showDialog by remember { mutableStateOf(false) }
-    val conversions by cardCurrencyViewModel.conversions.collectAsState()
+    val detailViewModel: CardCurrencyViewModel = hiltViewModel()
 
+    var showDialog by remember { mutableStateOf(false) }
+    val conversions by detailViewModel.conversions.collectAsState()
 
     LaunchedEffect(conversions) {
         Log.d("AddAndSearchChartsApp", "Current conversions: $conversions")
@@ -102,7 +103,7 @@ fun AddAndSearchChartsApp(
                             navController.navigate("detail/${conversion.id}")
                         },
                         onDelete = { conversion ->
-                            cardCurrencyViewModel.deleteConversion(conversion)
+                            detailViewModel.deleteConversion(conversion)
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -115,7 +116,7 @@ fun AddAndSearchChartsApp(
                             showDialog = false
                             // Add new conversion to the list
                             Log.d("AddAndSearchChartsApp", "Confirming conversion: $source -> $target")
-                            cardCurrencyViewModel.addConversion(source, target)
+                            detailViewModel.addConversion(source, target)
                         },
 
                         optionsList = CurrencyOptionsData.options,

@@ -26,7 +26,13 @@ interface CurrencyRateDao {
     @Query("SELECT rate FROM currency_rates WHERE UPPER(currencyCode) = UPPER(:currency) ORDER BY date DESC LIMIT 1")
     suspend fun getRateForCurrency(currency: String): Double?
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(rates: List<CurrencyRate>)
 
+    @Query("SELECT * FROM currency_rates WHERE date BETWEEN :startDate AND :endDate")
+    suspend fun getRatesBetweenDates(startDate: String, endDate: String): List<CurrencyRate>
 
+    @Query("SELECT * FROM currency_rates WHERE currencyCode = :currencyCode AND date = :date")
+    suspend fun getRateForCurrencyOnDate(currencyCode: String, date: String): CurrencyRate?
 
 }

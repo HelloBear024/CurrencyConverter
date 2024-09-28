@@ -2,19 +2,23 @@ package com.currecy.mycurrencyconverter
 
 import android.content.Context
 import android.util.Log
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
 import com.currecy.mycurrencyconverter.database.AppDatabase
 import com.currecy.mycurrencyconverter.database.CurrencyRate
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class CurrencyWorker(
-    context: Context,
-    workerParams: WorkerParameters
+@HiltWorker
+class CurrencyWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams)
 {
     private val currencyDao = AppDatabase.getDatabase(context).currencyRateDao()

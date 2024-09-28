@@ -47,45 +47,31 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.ViewModelProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.currecy.mycurrencyconverter.database.AppDatabase
-import com.currecy.mycurrencyconverter.database.CurrencyRateDao
-import com.currecy.mycurrencyconverter.model.CardCurrencyViewModel
-import com.currecy.mycurrencyconverter.model.CurrencyViewModelFactory
+import com.currecy.mycurrencyconverter.model.CameraViewModel
+import com.currecy.mycurrencyconverter.model.CurrencyViewModel
 import com.currecy.mycurrencyconverter.ui.AddAndSearchChartsApp
 import com.currecy.mycurrencyconverter.ui.CameraConversionScreen
 import com.currecy.mycurrencyconverter.ui.DetailScreen
 import com.currecy.mycurrencyconverter.ui.MainScreenCurrencyConverterEditTextView
 import com.currecy.mycurrencyconverter.ui.Screen
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 //    private lateinit var currencyDao: CurrencyRateDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
-            val db = AppDatabase.getDatabase(applicationContext)
-            val currencyDao = db.currencyRateDao()
-            val userPreferenceCurrencyDao = db.userCurrencyPreferenceDao()
-
-            val viewModelFactory = CurrencyViewModelFactory(
-                currencyDao = currencyDao,
-                userPreferenceCurrencyDao = userPreferenceCurrencyDao
-            )
-
-            val cardCurrencyViewModel: CardCurrencyViewModel = ViewModelProvider(
-                this,
-                viewModelFactory
-            ).get(CardCurrencyViewModel::class.java)
-
         setContent {
                 MyCurrencyConverterTheme {
 
@@ -96,8 +82,6 @@ class MainActivity : ComponentActivity() {
                     ) {
 
                         MainScreen(
-                            currencyDao = currencyDao,
-                            cardCurrencyViewModel = cardCurrencyViewModel
                         )
                     }
                 }
@@ -112,18 +96,14 @@ class MainActivity : ComponentActivity() {
 
 
     @Composable
-    fun MainScreen(
-        currencyDao: CurrencyRateDao,
-        cardCurrencyViewModel: CardCurrencyViewModel
-        ) {
+    fun MainScreen() {
         val navController = rememberNavController()
         var selectedScreen by remember { mutableStateOf(AppScreen.ConversionTextView) }
 
 //        TestCurrencyDao(currencyDao)
         Box {
             Scaffold(
-                topBar = { TopAppBar()
-                         },
+                topBar = { TopAppBar() },
                 bottomBar = {
                     BottomNavigationBar(
                         navController = navController,
@@ -141,13 +121,16 @@ class MainActivity : ComponentActivity() {
                             startDestination = AppScreen.ConversionTextView.name
                         ) {
                             composable(AppScreen.ConversionTextView.name) {
-                                MainScreenCurrencyConverterEditTextView(currencyDao = currencyDao)
+                                val currencyViewModel: CurrencyViewModel = hiltViewModel()
+                                MainScreenCurrencyConverterEditTextView(currencyViewModel = currencyViewModel)
                             }
                             composable(AppScreen.ConversionCamera.name) {
-                                CameraConversionScreen(currencyDao = currencyDao)
+                                val cameraViewModel: CameraViewModel = hiltViewModel()
+                                CameraConversionScreen(cameraViewModel = cameraViewModel)
                             }
                             composable(AppScreen.Charts.name) {
-                                AddAndSearchChartsApp(cardCurrencyViewModel = cardCurrencyViewModel, navController = navController)
+                                AddAndSearchChartsApp(
+                                    navController = navController)
                             }
                             composable(
                                 route = "detail/{id}",
@@ -155,7 +138,10 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 backStackEntry ->
                                     val id = backStackEntry.arguments?.getInt("id") ?: 0
-                                DetailScreen(conversionId = id, cardCurrencyViewModel = cardCurrencyViewModel)
+                                DetailScreen(
+                                    conversionId = id,
+                                    navController =  navController,
+                                )
                             }
                         }
                     }

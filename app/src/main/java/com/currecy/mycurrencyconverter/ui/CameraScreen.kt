@@ -2,19 +2,20 @@ package com.currecy.mycurrencyconverter.ui
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.currecy.mycurrencyconverter.database.CurrencyRateDao
+import com.currecy.mycurrencyconverter.model.CameraViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraConversionScreen(
-    currencyDao: CurrencyRateDao
+    cameraViewModel: CameraViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
 
@@ -24,7 +25,7 @@ fun CameraConversionScreen(
     ) {
         composable("camera_preview") {
             CameraPreviewScreen(
-                currencyDao = currencyDao,
+                cameraViewModel = cameraViewModel,
                 onImageSelected = { uri ->
                     navController.navigate("image_conversion?uri=${Uri.encode(uri.toString())}")
                 }
@@ -37,7 +38,7 @@ fun CameraConversionScreen(
             val uriString = backStackEntry.arguments?.getString("uri")!!
             ImageConversionScreen(
                 imageUri = Uri.parse(uriString),
-                currencyDao = currencyDao,
+                viewModel = cameraViewModel,
                 onBack = { navController.popBackStack() }
             )
         }
