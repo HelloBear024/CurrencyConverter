@@ -8,6 +8,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -15,9 +16,11 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -196,21 +199,31 @@ fun CameraPreviewScreen(
             .padding(top = 30.dp)
         ) {
 
-            DropdownMenuItemRow(
-                currencyOptions = CurrencyOptionsData.options,
-                selectedCurrencyFrom = converterUIStateCamera.selectedCurrencyFrom,
-                selectedCurrencyTo = converterUIStateCamera.selectedCurrencyTo,
-                onCurrencyFromChange = { newCurrency ->
-                    coroutineScope.launch {
-                        cameraViewModel.onCurrencyFromChange(newCurrency)
-                    }
-                },
-                onCurrencyToChange = { newCurrency ->
-                    coroutineScope.launch {
-                        cameraViewModel.onCurrencyToChange(newCurrency)
-                    }
+
+            if (converterUIStateCamera.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator() // Show loading indicator
                 }
-            )
+            } else {
+                // Render dropdowns and other UI elements when loading is complete
+                DropdownMenuItemRow(
+                    currencyOptions = CurrencyOptionsData.options,
+                    selectedCurrencyFrom = converterUIStateCamera.selectedCurrencyFrom,
+                    selectedCurrencyTo = converterUIStateCamera.selectedCurrencyTo,
+                    onCurrencyFromChange = { newCurrency ->
+                        cameraViewModel.onCurrencyFromChange(newCurrency)
+                    },
+                    onCurrencyToChange = { newCurrency ->
+                        cameraViewModel.onCurrencyToChange(newCurrency)
+                    },
+                    onSwitchCurrencies = {
+                        cameraViewModel.switchCurrencies()
+                    }
+                )
+            }
         }
 
 
@@ -353,35 +366,58 @@ fun DropdownMenuItemRow(
     selectedCurrencyTo: String,
     onCurrencyFromChange: (String) -> Unit,
     onCurrencyToChange: (String) -> Unit,
+    onSwitchCurrencies: () -> Unit,
     modifier: Modifier = Modifier) {
-    Row {
-        DropdownMenuSpinner(
-            optionsList = currencyOptions,
-            selectedCurrency = selectedCurrencyFrom,
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 10.dp,
-                    end = 10.dp),
-            onCurrencySelected = onCurrencyFromChange
-        )
 
-        IconButton(
-            onClick = {},
-        ) {
-            Icon(painter = painterResource(R.drawable.switch_sides_button),
-                contentDescription = "Switch Currency Place")
+    // Track whether to animate to a larger size
+    var isSwitched by remember { mutableStateOf(false) }
+
+    // Animate the size based on the switch state
+    val dropdownSize by animateDpAsState(targetValue = if (isSwitched) 70.dp else 56.dp)
+
+
+    Row() {
+
+        Box(modifier =  Modifier.weight(1f)
+            .padding(
+                start = 10.dp,
+                end = 10.dp
+            )
+            .height(dropdownSize)) {
+
+            DropdownMenuSpinner(
+                optionsList = currencyOptions,
+                selectedCurrency = selectedCurrencyFrom,
+                onCurrencySelected = onCurrencyFromChange
+            )
         }
 
+        IconButton(
+            onClick = {
+                onSwitchCurrencies()
+                isSwitched = !isSwitched
+            },
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.switch_sides_button),
+                contentDescription = "Switch Currency Place"
+            )
+        }
 
-        DropdownMenuSpinner(
-            optionsList = currencyOptions,
-            selectedCurrency = selectedCurrencyTo,
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 10.dp,
-                    end = 10.dp),
-            onCurrencySelected = onCurrencyToChange
-        )
+        Box(modifier = Modifier
+            .weight(1f)
+            .padding(
+                start = 10.dp,
+                end = 10.dp
+            )
+            .height(dropdownSize)
+        ) {
+            DropdownMenuSpinner(
+                optionsList = currencyOptions,
+                selectedCurrency = selectedCurrencyTo,
+                onCurrencySelected = onCurrencyToChange
+            )
+        }
     }
 
 }

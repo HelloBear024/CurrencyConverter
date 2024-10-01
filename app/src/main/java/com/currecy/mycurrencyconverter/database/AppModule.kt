@@ -1,6 +1,10 @@
 package com.currecy.mycurrencyconverter.database
 
 import android.content.Context
+import com.currecy.mycurrencyconverter.database.preferencess.camera.CameraPagePreferencesDao
+import com.currecy.mycurrencyconverter.database.preferencess.camera.CameraPagePreferencesRepository
+import com.currecy.mycurrencyconverter.database.preferencess.home.HomePageConversionPreferencesRepository
+import com.currecy.mycurrencyconverter.database.preferencess.home.HomePageCurrencyConversionDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,5 +49,33 @@ object AppModule {
     ): CurrencyRatesRepository {
         return CurrencyRatesRepository(currencyRateDao)
     }
+
+    @Provides
+    fun provideHomePageCurrencyConversionDao(appDatabase: AppDatabase): HomePageCurrencyConversionDao {
+        return appDatabase.homePageCurrencyConversionDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideHomePageConversionPreferencesRepository(
+        homePageCurrencyConversionDao: HomePageCurrencyConversionDao
+    ): HomePageConversionPreferencesRepository {
+        return HomePageConversionPreferencesRepository(homePageCurrencyConversionDao)
+    }
+
+    @Provides
+    fun provideCameraPagePreferencesDao(database: AppDatabase): CameraPagePreferencesDao {
+        return database.cameraPagePreferenceDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCameraPagePreferencesRepository(
+        cameraPagePreferencesDao: CameraPagePreferencesDao
+    ): CameraPagePreferencesRepository {
+        return CameraPagePreferencesRepository(cameraPagePreferencesDao)
+    }
+
+
 
 }

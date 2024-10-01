@@ -3,22 +3,31 @@ package com.currecy.mycurrencyconverter.model
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.currecy.mycurrencyconverter.database.CurrencyRatesRepository
 import com.currecy.mycurrencyconverter.database.UserCurrencyPreference
 import com.currecy.mycurrencyconverter.database.UserCurrencyPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class CardCurrencyViewModel @Inject constructor (
-    private val userRepo: UserCurrencyPreferencesRepository
+    private val userRepo: UserCurrencyPreferencesRepository,
+    private val ratesRepo: CurrencyRatesRepository
 ) : ViewModel() {
+
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     init {
         Log.d("CardCurrencyViewModel", "Initialized")
@@ -27,10 +36,49 @@ class CardCurrencyViewModel @Inject constructor (
     val conversions: StateFlow<List<ChartCurrencyState>> = userRepo.getAllPreferences()
         .map { preferences ->
             preferences.map { preference ->
+
+                val firstCurrentRate = ratesRepo.getCurrentRate(preference.firstCurrencyCode) ?: 0.0
+                val firstPreviousRate = ratesRepo.getPreviousRate(preference.firstCurrencyCode) ?: 0.0
+
+                val secondCurrentRate = ratesRepo.getCurrentRate(preference.secondCurrencyCode) ?: 0.0
+                val secondPreviousRate = ratesRepo.getPreviousRate(preference.secondCurrencyCode) ?: 0.0
+
+                Log.d("CardCurrencyViewModel", "First Current Rate ($firstCurrentRate), First Previous Rate ($firstPreviousRate)")
+                Log.d("CardCurrencyViewModel", "Second Current Rate ($secondCurrentRate), Second Previous Rate ($secondPreviousRate)")
+
+
+                // Calculate the combined exchange rate for today (USD/EUR)
+                val todayRate = if (secondCurrentRate != 0.0) {
+                    secondCurrentRate / firstCurrentRate
+                } else 0.0
+
+                Log.d("CardCurrencyViewModel", "todayRate : ($todayRate)")
+
+
+                // Calculate the combined exchange rate for yesterday (USD/EUR)
+                val yesterdayRate = if (secondPreviousRate != 0.0) {
+                    secondPreviousRate / firstPreviousRate
+                } else 0.0
+
+                Log.d("CardCurrencyViewModel", "yesterdayRate : ($yesterdayRate)")
+
+
+                // Calculate the percentage change in the combined exchange rate
+                val percentageChange = if (yesterdayRate > 0) {
+                    ((todayRate - yesterdayRate) / yesterdayRate) * 100
+                } else {
+                    0.0
+                }
+
+                Log.d("CardCurrencyViewModel", "Percentage Change: $percentageChange")
+
                 ChartCurrencyState(
                     id = preference.id,
                     sourceCurrency = preference.firstCurrencyCode,
-                    targetCurrency = preference.secondCurrencyCode
+                    targetCurrency = preference.secondCurrencyCode,
+                    currentRate = todayRate,
+                    percentageChange = percentageChange
+
                 )
             }
         }
@@ -82,4 +130,38 @@ class CardCurrencyViewModel @Inject constructor (
             }
         }
     }
+
+
+    // **Filtered Conversions Based on Search Query**
+    val filteredConversions: StateFlow<List<ChartCurrencyState>> = combine(conversions, _searchQuery) { conversions, query ->
+        if (query.isBlank()) {
+            conversions
+        } else {
+            conversions.filter {
+                it.sourceCurrency.contains(query, ignoreCase = true) ||
+                        it.targetCurrency.contains(query, ignoreCase = true)
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    // **Function to Update the Search Query**
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+
+
+
 }
+
+
+
+
+
+
+data class PreviousAndCurrentDayCurrency(
+    val previousDayFromCurrency: Int,
+    val previousDayToCurrency: Int,
+    val currentDayFromCurrency: Int,
+    val currentDayToCurrency: Int
+)

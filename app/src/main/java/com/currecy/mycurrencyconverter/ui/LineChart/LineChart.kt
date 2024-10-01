@@ -292,20 +292,7 @@ fun ExchangeRateLineChart(
                     center = Offset(x, y)
                 )
 
-                // Draw label above marker
-//                drawContext.canvas.nativeCanvas.apply {
-//                    drawText(
-//                        String.format("%.2f", point.rate),
-//                        x,
-//                        y - 15f,
-//                        android.graphics.Paint().apply {
-//                            color = labelColor.toArgb()
-//                            textSize = 30f
-//                            textAlign = android.graphics.Paint.Align.CENTER
-//                            isAntiAlias = true
-//                        }
-//                    )
-//                }
+
             }
 
             // Draw tooltip if a point is selected

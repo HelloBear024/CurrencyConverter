@@ -22,6 +22,7 @@ navigationRuntimeKtx = "2.8.1"
 hiltWork = "1.2.0"
 hilt = "2.52"
 hiltCommon = "1.2.0"
+composeMaterial3 = "1.0.0-alpha25"
 
 
 [libraries]
@@ -54,6 +55,7 @@ androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navig
 #androidx-wear-complications-data = { group = "androidx.wear", name = "wear-complications-data", version.ref = "wearComplicationsData" }
 androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
 androidx-hilt-common = { group = "androidx.hilt", name = "hilt-common", version.ref = "hiltCommon" }
+androidx-compose-material3 = { group = "androidx.wear.compose", name = "compose-material3", version.ref = "composeMaterial3" }
 #androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 
 

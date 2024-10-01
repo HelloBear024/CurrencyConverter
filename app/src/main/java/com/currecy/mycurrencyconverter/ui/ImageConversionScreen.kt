@@ -207,15 +207,15 @@ fun ImageConversionScreen(
                     selectedCurrencyFrom = converterUIState.selectedCurrencyFrom,
                     selectedCurrencyTo = converterUIState.selectedCurrencyTo,
                     onCurrencyFromChange = { newCurrency ->
-                        coroutineScope.launch {
+
                             viewModel.onCurrencyFromChange(newCurrency)
-                        }
                     },
                     onCurrencyToChange = { newCurrency ->
-                        coroutineScope.launch {
                             viewModel.onCurrencyToChange(newCurrency)
-                        }
                     },
+                    onSwitchCurrencies = {
+                        viewModel.switchCurrencies()
+                    }
                 )
             }
         }

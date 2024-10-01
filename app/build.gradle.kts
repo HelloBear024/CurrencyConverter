@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.currecy.mycurrencyconverter"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.currecy.mycurrencyconverter"
         minSdk = 29
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -77,6 +77,7 @@ dependencies {
 
     implementation (libs.hilt.android)
     implementation(libs.androidx.hilt.common)
+    implementation(libs.androidx.compose.material3)
     kapt(libs.hilt.compiler)
     implementation (libs.androidx.hilt.navigation.compose)
 //    implementation (libs.androidx.hilt.lifecycle.viewmodel)
@@ -93,7 +94,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.1.0")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.0")
     implementation ("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
-
+    implementation ("com.google.accompanist:accompanist-swiperefresh:0.28.0")
     implementation ("com.patrykandpatrick.vico:core:2.0.0-beta.1")
     implementation("com.patrykandpatrick.vico:compose:2.0.0-beta.1")
     implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-beta.1")

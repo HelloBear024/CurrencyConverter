@@ -7,5 +7,4 @@ data class UserCurrencyPreference(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val firstCurrencyCode: String,
     val secondCurrencyCode: String,
-
     )

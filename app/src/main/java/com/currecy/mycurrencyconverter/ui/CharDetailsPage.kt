@@ -1,6 +1,8 @@
 package com.currecy.mycurrencyconverter.ui
 
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.currecy.mycurrencyconverter.TimeRange
 import com.currecy.mycurrencyconverter.model.CardCurrencyViewModel
+import com.currecy.mycurrencyconverter.model.DetailUiState
 import com.currecy.mycurrencyconverter.model.DetailViewModel
 import com.currecy.mycurrencyconverter.model.NewsViewModel
 import com.currecy.mycurrencyconverter.ui.LineChart.ExchangeRateLineChart
@@ -50,6 +54,7 @@ fun DetailScreen(
     newsViewModel: NewsViewModel = hiltViewModel()
 ) {
 
+    val scrollState = rememberLazyListState()
 
     val conversion by cardCurrencyViewModel.getConversionById(conversionId).collectAsState(initial = null)
     val uiState by detailViewModel.uiState.collectAsState()
@@ -59,6 +64,18 @@ fun DetailScreen(
         conversion?.let {
             newsViewModel.fetchNews(it.sourceCurrency, it.targetCurrency)
         }
+    }
+
+    // MutableTransitionState to control visibility
+    val chartVisibilityState = remember {
+        MutableTransitionState(true).apply {
+            targetState = scrollState.firstVisibleItemIndex == 0 && scrollState.firstVisibleItemScrollOffset < 200
+        }
+    }
+
+    // Update the visibility based on the scroll position
+    LaunchedEffect(scrollState.firstVisibleItemIndex, scrollState.firstVisibleItemScrollOffset) {
+        chartVisibilityState.targetState = scrollState.firstVisibleItemIndex == 0 && scrollState.firstVisibleItemScrollOffset < 400
     }
 
 
@@ -90,106 +107,47 @@ fun DetailScreen(
                         fontSize = 35.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier.background(
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                            .fillMaxWidth()
-                            .padding(5.dp)
-                    ) {
-                        Column {
-                            // Time Range Selection
-                            // Display Content Based on UI State
-                            when {
-                                uiState.isLoading -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(300.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator()
-                                    }
+
+                    ChartSection(
+                        uiState = uiState,
+                        chartVisibilityState = chartVisibilityState,
+                        selectedTimeRange = selectedTimeRange,
+                        onTimeRangeSelected = { timeRange ->
+                            selectedTimeRange = timeRange
+                        })
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (newsArticles.isNotEmpty()) {
+                        LazyColumn(
+                            state = scrollState,
+                            modifier = Modifier.fillMaxSize().padding(8.dp)
+                        ) {
+                            if (newsArticles.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        text = "Related News",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        modifier = Modifier.padding(8.dp)
+                                    )
                                 }
-
-                                uiState.errorMessage != null -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(300.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = uiState.errorMessage!!,
-                                            color = Color.Red,
-                                            style = MaterialTheme.typography.bodyLarge
-                                        )
-                                    }
+                                items(newsArticles) { article ->
+                                    NewsItem(article)
                                 }
-
-                                else -> {
-                                    if (uiState.chartData.isNotEmpty()) {
-
-
-                                        ExchangeRateLineChart(
-                                            chartData = uiState.chartData,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(300.dp),
-                                            lineColor = MaterialTheme.colorScheme.primary,
-                                            markerColor = MaterialTheme.colorScheme.secondary
-                                        )
-                                    } else {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(300.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "No data available for the selected time range.",
-                                                style = MaterialTheme.typography.bodyLarge
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    TimeRangeSelection(
-                                        selectedTimeRange = selectedTimeRange,
-                                        onTimeRangeSelected = { timeRange ->
-                                            selectedTimeRange = timeRange
-                                        }
+                            } else {
+                                item {
+                                    Text(
+                                        text = "No news available for ${updatedConversion.sourceCurrency.uppercase()}.",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.padding(16.dp)
                                     )
                                 }
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier. height(16.dp))
-                    if (newsArticles.isNotEmpty()) {
-                        Text(
-                            text = "Related News",
-                            style = MaterialTheme.typography.headlineMedium,
-                            modifier = Modifier.padding(8.dp)
-                        )
-
-                        LazyColumn {
-                            items(newsArticles) { article ->
-                                NewsItem(article)
-                            }
-                        }
-                    } else {
-                        // If no news is available
-                        Text(
-                            text = "No news available for ${updatedConversion.sourceCurrency.uppercase()}.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
-
                 }
             }
-        else {
+                    else {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -200,10 +158,91 @@ fun DetailScreen(
                 }
             }
 
-        }
+        })
 
-    )
 }
+
+
+@Composable
+fun ChartSection(
+    uiState: DetailUiState,
+    chartVisibilityState: MutableTransitionState<Boolean>,
+    selectedTimeRange: TimeRange,
+    onTimeRangeSelected: (TimeRange) -> Unit
+) {
+    AnimatedVisibility(visibleState = chartVisibilityState) {
+        Box(
+            modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .fillMaxWidth()
+                .padding(5.dp)
+        ) {
+            Column {
+                when {
+                    uiState.isLoading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    uiState.errorMessage != null -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = uiState.errorMessage!!,
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                    else -> {
+                        if (uiState.chartData.isNotEmpty()) {
+                            ExchangeRateLineChart(
+                                chartData = uiState.chartData,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp),
+                                lineColor = MaterialTheme.colorScheme.primary,
+                                markerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No data available for the selected time range.",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        TimeRangeSelection(
+                            selectedTimeRange = selectedTimeRange,
+                            onTimeRangeSelected = onTimeRangeSelected
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
 
 // TimeRangeSelection.kt
 @Composable
