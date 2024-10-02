@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
@@ -84,6 +86,7 @@ fun MainScreenCurrencyConverterEditTextView(
             }
         },
         modifier = Modifier.fillMaxSize()
+            .systemBarsPadding()
     ) { innerPadding ->
         LazyColumn(
             state = listState,
@@ -91,6 +94,7 @@ fun MainScreenCurrencyConverterEditTextView(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
+                .padding(bottom = 0.dp)
         ) {
             // Use 'items' with a count and a key based on index
             items(
@@ -197,7 +201,6 @@ fun MainScreenCurrencyConverterEditTextView(
                         }
                     }
                 } else {
-
                     CurrencySelectorItem(
                         currencyOptions = CurrencyOptionsData.options,
                         value = converterUIState.valueTexts[index],
@@ -240,16 +243,11 @@ fun CurrencySelectorItem(
     modifier: Modifier = Modifier
 ) {
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .then(modifier)
-    ) {
+    Row(modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Box(
             modifier = Modifier
                 .weight(3f)
-                .align(Alignment.CenterVertically)
         ) {
             EditNumberField(
                 label = selectedCurrency,
@@ -264,6 +262,7 @@ fun CurrencySelectorItem(
             modifier = Modifier
                 .weight(1.2f)
                 .padding(top = 8.dp)
+
 
         ) {
             DropdownMenuSpinner(
@@ -312,19 +311,22 @@ fun CurrencySelectorItem(
                 onValueChange = {},
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = ExposedDropdownMenuDefaults.textFieldColors(
-                    focusedContainerColor = MaterialTheme.colorScheme.tertiary,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.onTertiary,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+
                     focusedTextColor = MaterialTheme.colorScheme.outlineVariant,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+
                     unfocusedTrailingIconColor = MaterialTheme.colorScheme.tertiary,
                     focusedTrailingIconColor = MaterialTheme.colorScheme.onTertiary,
+
                     unfocusedIndicatorColor = MaterialTheme.colorScheme.tertiary,
                     focusedIndicatorColor = MaterialTheme.colorScheme.onTertiary
 
                 ),
                 shape = RoundedCornerShape(15.dp),
                 singleLine = true,
-                modifier = Modifier.menuAnchor(),
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
                 readOnly = true
             )
 
@@ -381,6 +383,8 @@ fun CurrencySelectorItem(
             label = { Text(label) },
             shape = RoundedCornerShape(15.dp),
             colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
 
                 focusedTextColor = MaterialTheme.colorScheme.tertiary,
                 unfocusedTextColor = MaterialTheme.colorScheme.tertiary,
@@ -392,7 +396,7 @@ fun CurrencySelectorItem(
                 unfocusedLabelColor = MaterialTheme.colorScheme.tertiary,
 
             ),
-            modifier = modifier,
+            modifier = modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = keyboardOptions
         )

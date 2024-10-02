@@ -224,9 +224,8 @@ class CurrencyViewModel @Inject constructor(
             saveStateToDatabase()
         }
     }
-    }
-
 
     fun undoRemoveItem(index: Int) {
 
     }
+}

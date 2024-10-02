@@ -17,7 +17,7 @@ import com.currecy.mycurrencyconverter.database.preferencess.userCurrencyList.Us
 import com.currecy.mycurrencyconverter.database.preferencess.userCurrencyList.UserCurrencyPreferenceDao
 
 @Database(entities = [CurrencyRate::class, UserCurrencyPreference::class,
-    HomePageConversionEntity::class, CameraPagePreferencesEntity::class], version = 8, exportSchema = false)
+    HomePageConversionEntity::class, CameraPagePreferencesEntity::class], version = 1, exportSchema = false)
     abstract class AppDatabase : RoomDatabase() {
     abstract fun currencyRateDao(): CurrencyRateDao
     abstract fun userCurrencyPreferenceDao(): UserCurrencyPreferenceDao
@@ -38,14 +38,14 @@ import com.currecy.mycurrencyconverter.database.preferencess.userCurrencyList.Us
                     AppDatabase::class.java,
                     "currency_database"
                 )
-                    .addMigrations(MIGRATION_7_8)
+                    .addMigrations(MIGRATION_1_2)
                     .build()
                 INSTANCE = instance
                 instance
             }
         }
 
-        private val MIGRATION_7_8 = object : Migration(7, 8) {
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // Migrate currency_rates table
                 database.execSQL(
