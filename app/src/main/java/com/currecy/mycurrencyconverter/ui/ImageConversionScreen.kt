@@ -37,7 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
-import com.currecy.mycurrencyconverter.model.CameraViewModel
+import com.currecy.mycurrencyconverter.model.cameraModel.CameraViewModel
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions

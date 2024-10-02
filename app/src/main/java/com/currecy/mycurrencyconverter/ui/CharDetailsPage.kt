@@ -37,11 +37,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.currecy.mycurrencyconverter.TimeRange
-import com.currecy.mycurrencyconverter.model.CardCurrencyViewModel
-import com.currecy.mycurrencyconverter.model.DetailUiState
-import com.currecy.mycurrencyconverter.model.DetailViewModel
-import com.currecy.mycurrencyconverter.model.NewsViewModel
+import com.currecy.mycurrencyconverter.api.CurrencyAPI.TimeRange
+import com.currecy.mycurrencyconverter.model.chartModel.DetailUiState
+import com.currecy.mycurrencyconverter.model.chartModel.DetailViewModel
+import com.currecy.mycurrencyconverter.model.chartModel.NewsViewModel
+import com.currecy.mycurrencyconverter.model.searchChart.CardCurrencyViewModel
 import com.currecy.mycurrencyconverter.ui.LineChart.ExchangeRateLineChart
 import com.currecy.mycurrencyconverter.ui.News.NewsItem
 

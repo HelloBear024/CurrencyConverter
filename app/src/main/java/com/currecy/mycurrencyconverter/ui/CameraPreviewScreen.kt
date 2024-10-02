@@ -48,7 +48,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.currecy.mycurrencyconverter.R
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
-import com.currecy.mycurrencyconverter.model.CameraViewModel
+import com.currecy.mycurrencyconverter.model.cameraModel.CameraViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -104,6 +104,18 @@ fun CameraPreviewScreen(
 
 
     val context = LocalContext.current
+
+
+    val cameraPermissionState = rememberPermissionState(
+        android.Manifest.permission.CAMERA
+    )
+
+    LaunchedEffect(Unit) {
+        if (!cameraPermissionState.status.isGranted){
+            cameraPermissionState.launchPermissionRequest()
+        }
+    }
+
 
     val permissionState = rememberPermissionState(
         permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

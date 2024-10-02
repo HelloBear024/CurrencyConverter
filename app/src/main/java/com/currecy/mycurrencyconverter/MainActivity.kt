@@ -54,13 +54,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.currecy.mycurrencyconverter.model.CameraViewModel
-import com.currecy.mycurrencyconverter.model.CurrencyViewModel
+import com.currecy.mycurrencyconverter.model.cameraModel.CameraViewModel
+import com.currecy.mycurrencyconverter.model.homeModel.CurrencyViewModel
 import com.currecy.mycurrencyconverter.ui.AddAndSearchChartsApp
 import com.currecy.mycurrencyconverter.ui.CameraConversionScreen
 import com.currecy.mycurrencyconverter.ui.DetailScreen
 import com.currecy.mycurrencyconverter.ui.MainScreenCurrencyConverterEditTextView
-import com.currecy.mycurrencyconverter.ui.Screen
+import com.currecy.mycurrencyconverter.ui.BottomNavigation.Screen
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
 import dagger.hilt.android.AndroidEntryPoint
 

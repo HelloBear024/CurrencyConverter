@@ -7,6 +7,5 @@ import androidx.room.PrimaryKey
  data class HomePageConversionEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val index: Int,
-    val amount: Double,
     val selectedCurrency: String
 )

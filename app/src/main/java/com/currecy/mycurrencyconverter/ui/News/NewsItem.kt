@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.currecy.mycurrencyconverter.NewsAPI.Article
+import com.currecy.mycurrencyconverter.api.NewsAPI.Article
 
 
 @Composable

@@ -60,7 +60,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.currecy.mycurrencyconverter.R
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
-import com.currecy.mycurrencyconverter.model.CurrencyViewModel
+import com.currecy.mycurrencyconverter.model.homeModel.CurrencyViewModel
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -73,7 +73,6 @@ fun MainScreenCurrencyConverterEditTextView(
     val converterUIState by currencyViewModel.currencyRatesState.collectAsState()
     val listState = rememberLazyListState()
     val snackBarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) },
@@ -129,11 +128,12 @@ fun MainScreenCurrencyConverterEditTextView(
                                                     currencyViewModel.removeItem(index)
 
                                                     // Show Snackbar with Undo option
-                                                    val snackbarResult = snackBarHostState.showSnackbar(
-                                                        message = "Item deleted",
-                                                        actionLabel = "Undo",
-                                                        duration = SnackbarDuration.Short
-                                                    )
+                                                    val snackbarResult =
+                                                        snackBarHostState.showSnackbar(
+                                                            message = "Item deleted",
+                                                            actionLabel = "Undo",
+                                                            duration = SnackbarDuration.Short
+                                                        )
                                                     if (snackbarResult == SnackbarResult.ActionPerformed) {
                                                         currencyViewModel.undoRemoveItem(index)
                                                     }
@@ -150,7 +150,8 @@ fun MainScreenCurrencyConverterEditTextView(
                                             if (dragAmount < 0) { // Only allow left swipe
                                                 change.consumeAllChanges()
                                                 scope.launch {
-                                                    val newOffset = (offsetX.value + dragAmount).coerceAtMost(0f)
+                                                    val newOffset =
+                                                        (offsetX.value + dragAmount).coerceAtMost(0f)
                                                     offsetX.snapTo(newOffset)
                                                 }
                                             }
@@ -179,9 +180,9 @@ fun MainScreenCurrencyConverterEditTextView(
                             // Foreground item content
                             CurrencySelectorItem(
                                 currencyOptions = CurrencyOptionsData.options,
-                                value = if (converterUIState.values[index] == 0.0) "" else converterUIState.values[index].toString(),
+                                value = converterUIState.valueTexts[index],
                                 onAmountChange = { newAmount ->
-                                    currencyViewModel.onAmountChange(newAmount.toDouble(), index)
+                                    currencyViewModel.onAmountChange(newAmount, index)
                                 },
                                 onCurrencyChange = { newCurrency ->
                                     currencyViewModel.onCurrencyChange(newCurrency, index)
@@ -196,12 +197,12 @@ fun MainScreenCurrencyConverterEditTextView(
                         }
                     }
                 } else {
-                    // If swiping is not allowed, display the item normally
+
                     CurrencySelectorItem(
                         currencyOptions = CurrencyOptionsData.options,
-                        value = if (converterUIState.values[index] == 0.0) "" else converterUIState.values[index].toString(),
+                        value = converterUIState.valueTexts[index],
                         onAmountChange = { newAmount ->
-                            currencyViewModel.onAmountChange(newAmount.toDouble(), index)
+                            currencyViewModel.onAmountChange(newAmount, index)
                         },
                         onCurrencyChange = { newCurrency ->
                             currencyViewModel.onCurrencyChange(newCurrency, index)
@@ -225,6 +226,8 @@ fun MainScreenCurrencyConverterEditTextView(
 
 
 
+
+
 @Composable
 fun CurrencySelectorItem(
     currencyOptions: List<Pair<String, String>>,
@@ -241,6 +244,7 @@ fun CurrencySelectorItem(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
+            .then(modifier)
     ) {
         Box(
             modifier = Modifier
@@ -275,7 +279,10 @@ fun CurrencySelectorItem(
 
 
 
-    @OptIn(ExperimentalMaterial3Api::class)
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
     @Composable
  fun DropdownMenuSpinner(
         modifier: Modifier = Modifier,
@@ -357,9 +364,20 @@ fun CurrencySelectorItem(
         modifier: Modifier = Modifier
     ) {
 
+        var internalValue by remember { mutableStateOf(value) }
+
+
+        LaunchedEffect(value) {
+            internalValue = value
+        }
+
+
         OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
+            value = internalValue,
+            onValueChange = { newValue ->
+                internalValue = newValue
+                onValueChange(newValue)
+            },
             label = { Text(label) },
             shape = RoundedCornerShape(15.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -373,9 +391,8 @@ fun CurrencySelectorItem(
                 focusedLabelColor = MaterialTheme.colorScheme.tertiary,
                 unfocusedLabelColor = MaterialTheme.colorScheme.tertiary,
 
-
-
             ),
+            modifier = modifier,
             singleLine = true,
             keyboardOptions = keyboardOptions
         )

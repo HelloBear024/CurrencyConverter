@@ -101,6 +101,9 @@ dependencies {
     implementation("com.patrykandpatrick.vico:views:2.0.0-beta.1")
 
 
+    implementation("androidx.glance:glance-appwidget:1.1.0")
+    implementation ("androidx.glance:glance-material3:1.1.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

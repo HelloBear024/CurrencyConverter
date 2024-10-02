@@ -58,8 +58,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
-import com.currecy.mycurrencyconverter.model.CardCurrencyViewModel
-import com.currecy.mycurrencyconverter.model.ChartCurrencyState
+import com.currecy.mycurrencyconverter.model.searchChart.CardCurrencyViewModel
+import com.currecy.mycurrencyconverter.model.searchChart.ChartCurrencyState
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt

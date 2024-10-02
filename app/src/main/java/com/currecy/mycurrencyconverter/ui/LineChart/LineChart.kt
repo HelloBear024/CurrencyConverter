@@ -32,7 +32,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.currecy.mycurrencyconverter.model.HistoricalRate
+import com.currecy.mycurrencyconverter.model.chartModel.HistoricalRate
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

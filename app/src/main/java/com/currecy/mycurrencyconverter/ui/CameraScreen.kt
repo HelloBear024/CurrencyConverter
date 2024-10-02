@@ -8,7 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.currecy.mycurrencyconverter.model.CameraViewModel
+import com.currecy.mycurrencyconverter.model.cameraModel.CameraViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
 

@@ -3,8 +3,12 @@ package com.currecy.mycurrencyconverter.database
 import android.content.Context
 import com.currecy.mycurrencyconverter.database.preferencess.camera.CameraPagePreferencesDao
 import com.currecy.mycurrencyconverter.database.preferencess.camera.CameraPagePreferencesRepository
+import com.currecy.mycurrencyconverter.database.preferencess.currencyRates.CurrencyRateDao
+import com.currecy.mycurrencyconverter.database.preferencess.currencyRates.CurrencyRatesRepository
 import com.currecy.mycurrencyconverter.database.preferencess.home.HomePageConversionPreferencesRepository
 import com.currecy.mycurrencyconverter.database.preferencess.home.HomePageCurrencyConversionDao
+import com.currecy.mycurrencyconverter.database.preferencess.userCurrencyList.UserCurrencyPreferenceDao
+import com.currecy.mycurrencyconverter.database.preferencess.userCurrencyList.UserCurrencyPreferencesRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

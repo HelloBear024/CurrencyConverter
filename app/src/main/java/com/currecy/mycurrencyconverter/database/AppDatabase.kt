@@ -9,11 +9,15 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.currecy.mycurrencyconverter.database.preferencess.camera.CameraPagePreferencesDao
 import com.currecy.mycurrencyconverter.database.preferencess.camera.CameraPagePreferencesEntity
+import com.currecy.mycurrencyconverter.database.preferencess.currencyRates.CurrencyRate
+import com.currecy.mycurrencyconverter.database.preferencess.currencyRates.CurrencyRateDao
 import com.currecy.mycurrencyconverter.database.preferencess.home.HomePageConversionEntity
 import com.currecy.mycurrencyconverter.database.preferencess.home.HomePageCurrencyConversionDao
+import com.currecy.mycurrencyconverter.database.preferencess.userCurrencyList.UserCurrencyPreference
+import com.currecy.mycurrencyconverter.database.preferencess.userCurrencyList.UserCurrencyPreferenceDao
 
 @Database(entities = [CurrencyRate::class, UserCurrencyPreference::class,
-    HomePageConversionEntity::class, CameraPagePreferencesEntity::class], version = 5, exportSchema = false)
+    HomePageConversionEntity::class, CameraPagePreferencesEntity::class], version = 8, exportSchema = false)
     abstract class AppDatabase : RoomDatabase() {
     abstract fun currencyRateDao(): CurrencyRateDao
     abstract fun userCurrencyPreferenceDao(): UserCurrencyPreferenceDao
@@ -34,14 +38,14 @@ import com.currecy.mycurrencyconverter.database.preferencess.home.HomePageCurren
                     AppDatabase::class.java,
                     "currency_database"
                 )
-                    .addMigrations(MIGRATION_4_5)
+                    .addMigrations(MIGRATION_7_8)
                     .build()
                 INSTANCE = instance
                 instance
             }
         }
 
-        private val MIGRATION_4_5 = object : Migration(4, 5) {
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // Migrate currency_rates table
                 database.execSQL(
@@ -86,7 +90,6 @@ import com.currecy.mycurrencyconverter.database.preferencess.home.HomePageCurren
                     CREATE TABLE home_currency_conversion (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                         `index` INTEGER NOT NULL,
-                        amount REAL NOT NULL,
                         selectedCurrency TEXT NOT NULL
                     )
                     """.trimIndent()
