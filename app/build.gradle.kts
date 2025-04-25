@@ -72,7 +72,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.4")
     implementation(libs.androidx.espresso.core)
 
-
     implementation ("com.squareup:javapoet:1.13.0")
 
     implementation (libs.hilt.android)
@@ -111,4 +110,13 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(kotlin("script-runtime"))
+
+
+    implementation("dev.chrisbanes.haze:haze:1.5.3")
+    implementation("dev.chrisbanes.haze:haze-materials:1.5.3")
+
+    // icons
+    implementation (libs.androidx.material.icons.extended)
+
 }

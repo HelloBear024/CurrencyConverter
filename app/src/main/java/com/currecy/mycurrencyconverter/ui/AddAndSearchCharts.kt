@@ -61,6 +61,7 @@ import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
 import com.currecy.mycurrencyconverter.model.searchChart.CardCurrencyViewModel
 import com.currecy.mycurrencyconverter.model.searchChart.ChartCurrencyState
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
+import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -68,6 +69,7 @@ import kotlin.math.roundToInt
 @Composable
 fun AddAndSearchChartsApp(
     navController: NavController,
+    hazeState: HazeState
 ){
     val detailViewModel: CardCurrencyViewModel = hiltViewModel()
     var showDialog by remember { mutableStateOf(false) }

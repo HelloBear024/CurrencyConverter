@@ -70,6 +70,7 @@ import kotlin.math.roundToInt
 
 @Composable
 fun MainScreenCurrencyConverterEditTextView(
+    hazeState: HazeState,
     currencyViewModel: CurrencyViewModel = hiltViewModel()
 ) {
     val converterUIState by currencyViewModel.currencyRatesState.collectAsState()

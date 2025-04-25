@@ -7,6 +7,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.EuroSymbol
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -42,9 +46,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -52,6 +58,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.currecy.mycurrencyconverter.model.cameraModel.CameraViewModel
@@ -63,6 +71,11 @@ import com.currecy.mycurrencyconverter.ui.DetailScreen
 import com.currecy.mycurrencyconverter.ui.MainScreenCurrencyConverterEditTextView
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
 import dagger.hilt.android.AndroidEntryPoint
+import dev.chrisbanes.haze.HazeDefaults.blurRadius
+import dev.chrisbanes.haze.HazeDefaults.noiseFactor
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.materials.HazeMaterials
 
 
 @AndroidEntryPoint
@@ -70,258 +83,291 @@ class MainActivity : ComponentActivity() {
 //    private lateinit var currencyDao: CurrencyRateDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        setContent {
-                MyCurrencyConverterTheme {
 
-                    Surface(
+        setContent {
+
+            val navController = rememberNavController()
+            var selectedScreen by remember { mutableStateOf( AppScreen.HomePage ) }
+            val navBackStackEntry = navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry.value?.destination?.route
+
+            val hazeState = remember { HazeState() }
+
+
+            MyCurrencyConverterTheme {
+
+                Scaffold (
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                ) { innerPadding ->
+
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(innerPadding)
                     ) {
-                        MainScreen(
-                        )
-                    }
-                }
-            }
-        }
-
-
-    private fun enableEdgeToEdge() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-    }
-
-
-
-    @Composable
-    fun MainScreen() {
-        val navController = rememberNavController()
-        var selectedScreen by remember { mutableStateOf(AppScreen.ConversionTextView) }
-
-//        TestCurrencyDao(currencyDao)
-        Box {
-            Scaffold(
-                topBar = { TopAppBar() },
-                bottomBar = {
-                    BottomNavigationBar(
-                        navController = navController,
-                        selectedScreen = selectedScreen,
-                        onScreenSelected = { screen ->
-                            selectedScreen = screen
-                            navController.navigate(screen.name)
-                        }
-                    )
-                },
-                content = { innerPadding ->
-                    Box(modifier = Modifier.padding(innerPadding)) {
-                        NavHost(
+                        AuthNavGraph(
                             navController = navController,
-                            startDestination = AppScreen.ConversionTextView.name
-                        ) {
-                            composable(AppScreen.ConversionTextView.name) {
-                                val currencyViewModel: CurrencyViewModel = hiltViewModel()
-                                MainScreenCurrencyConverterEditTextView(currencyViewModel = currencyViewModel)
-                            }
-                            composable(AppScreen.ConversionCamera.name) {
-                                val cameraViewModel: CameraViewModel = hiltViewModel()
-                                CameraConversionScreen(cameraViewModel = cameraViewModel)
-                            }
-                            composable(AppScreen.Charts.name) {
-                                AddAndSearchChartsApp(
-                                    navController = navController)
-                            }
-                            composable(
-                                route = "detail/{id}",
-                                arguments = listOf(navArgument("id") { type = NavType.IntType})
-                            ) {
-                                backStackEntry ->
-                                    val id = backStackEntry.arguments?.getInt("id") ?: 0
-                                DetailScreen(
-                                    conversionId = id,
-                                    navController =  navController,
-                                )
-                            }
-                        }
+                            hazeState = hazeState
+                        )
                     }
                 }
-            )
-
-            val fabScale by animateFloatAsState(
-                targetValue = if (selectedScreen == AppScreen.ConversionCamera) 1.2f else 1f
-            )
-
-            val fabOffsetY by animateDpAsState(
-                targetValue = if (selectedScreen == AppScreen.ConversionCamera) (-37).dp else (-42).dp
-            )
-
-
-            FloatingActionButton(
-                onClick = {
-                    selectedScreen = AppScreen.ConversionCamera
-                    navController.navigate(AppScreen.ConversionCamera.name)
-                },
-                containerColor = if (selectedScreen == AppScreen.ConversionCamera)
-                    MaterialTheme.colorScheme.onTertiary
-                else
-                    MaterialTheme.colorScheme.tertiary,
-
-
-
-                contentColor = if (selectedScreen == AppScreen.ConversionCamera)
-                    MaterialTheme.colorScheme.onSurface
-                else
-                    MaterialTheme.colorScheme.outlineVariant,
-                shape = CircleShape,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = fabOffsetY)
-                    .size(65.dp * fabScale) // Adjust offset to position FAB correctly
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.photo),
-                    contentDescription = "Camera",
-                    modifier = Modifier.size(40.dp * fabScale)
-                )
-            }
-        }
-    }
-
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun TopAppBar(modifier: Modifier = Modifier) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(bottomEnd = 20.dp , bottomStart = 20.dp))
-
-        ) {
-            CenterAlignedTopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Image(
-                            modifier = Modifier
-                                .size(60.dp)
-                                .padding(8.dp),
-                            painter = painterResource(R.drawable.currency_exchange),
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.tertiary),
-                            contentDescription = null
-                        )
-
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.displayLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                modifier = modifier.fillMaxWidth(),
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                ),
-            )
-        }
-    }
-
-
-    @Composable
-    fun BottomNavigationBar(
-        navController: NavHostController,
-        selectedScreen: AppScreen,
-        onScreenSelected: (AppScreen) -> Unit
-    ) {
-        val fabSize = 75.dp
-        val fabMargin = 8.dp
-        val cutoutRadius = with(LocalDensity.current) { (fabSize / 2 + fabMargin).toPx() }
-        val cornerRadius = with(LocalDensity.current) { 30.dp.toPx()}
-
-        Surface(
-            shape = Screen(cutoutRadius, cornerRadius),
-            color = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(75.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .padding(vertical = 15.dp, horizontal = 15.dp)
-            ) {
-                Spacer(modifier = Modifier.weight(1f))
-
-                NavigationIcon(
-                    isSelected = selectedScreen == AppScreen.ConversionTextView,
-                    onClick = {
-                        onScreenSelected(AppScreen.ConversionTextView)
+                BottomNavigationBar(
+                    navController = navController,
+                    selectedScreen = selectedScreen,
+                    onScreenSelected = { screen ->
+                        if (selectedScreen != screen) {
+                            selectedScreen = screen
+                            navController.navigate(screen.route) {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
                     },
-                    painter = painterResource(R.drawable.home),
-                    contentDescription = "Home",
-                    defaultTint = MaterialTheme.colorScheme.inverseSurface,
-                    selectedTint = MaterialTheme.colorScheme.tertiary // Adjust as needed
+                    hazeState = hazeState,
+                    modifier = Modifier
+//                                .align(Alignment.BottomCenter)
+                        .padding(bottom = 30.dp)
+//                                .zIndex(3f)
                 )
-
-                Spacer(modifier = Modifier.weight(3f))
-
-                // Charts Icon
-                NavigationIcon(
-                    isSelected = selectedScreen == AppScreen.Charts,
-                    onClick = {
-                        onScreenSelected(AppScreen.Charts)
-                    },
-                    painter = painterResource(id = R.drawable.monitor),
-                    contentDescription = "Charts",
-                    defaultTint = MaterialTheme.colorScheme.inverseSurface,
-                    selectedTint = MaterialTheme.colorScheme.tertiary // Adjust as needed
-                )
-                Spacer(modifier = Modifier.weight(1f))
-
-            }
             }
         }
     }
+}
 
 
 
-    @Composable
-    fun NavigationIcon(
-        isSelected: Boolean,
-        onClick: () -> Unit,
-        painter: Painter,
-        contentDescription: String,
-        defaultTint: Color,
-        selectedTint: Color
-    ) {
-        val size by animateDpAsState(
-            targetValue = if (isSelected) 48.dp else 40.dp
-        )
-        val tint by animateColorAsState(
-            targetValue = if (isSelected) selectedTint else defaultTint
+
+
+@Composable
+fun MainScreen() {
+    val navController = rememberNavController()
+    var selectedScreen by remember { mutableStateOf(AppScreen.HomePage) }
+    Box {
+        Scaffold(
+            content = { innerPadding ->
+//                    Box(modifier = Modifier.padding(innerPadding)) {
+//                        NavHost(
+//                            navController = navController,
+//                            startDestination = AppScreen.ConversionTextView.name
+//                        ) {
+//                            composable(AppScreen.ConversionTextView.name) {
+//                                val currencyViewModel: CurrencyViewModel = hiltViewModel()
+//                                MainScreenCurrencyConverterEditTextView(currencyViewModel = currencyViewModel)
+//                            }
+//                            composable(AppScreen.ConversionCamera.name) {
+//                                val cameraViewModel: CameraViewModel = hiltViewModel()
+//                                CameraConversionScreen(cameraViewModel = cameraViewModel)
+//                            }
+//                            composable(AppScreen.Charts.name) {
+//                                AddAndSearchChartsApp(
+//                                    navController = navController)
+//                            }
+//                            composable(
+//                                route = "detail/{id}",
+//                                arguments = listOf(navArgument("id") { type = NavType.IntType})
+//                            ) {
+//                                backStackEntry ->
+//                                    val id = backStackEntry.arguments?.getInt("id") ?: 0
+//                                DetailScreen(
+//                                    conversionId = id,
+//                                    navController =  navController,
+//                                )
+//                            }
+//                        }
+//                    }
+            }
         )
 
-        IconButton(
-            onClick = onClick,
+        val fabScale by animateFloatAsState(
+            targetValue = if (selectedScreen == AppScreen.CameraConversionPage) 1.2f else 1f
+        )
+
+        val fabOffsetY by animateDpAsState(
+            targetValue = if (selectedScreen == AppScreen.CameraConversionPage) (-37).dp else (-42).dp
+        )
+
+
+        FloatingActionButton(
+            onClick = {
+                selectedScreen = AppScreen.CameraConversionPage
+                navController.navigate(AppScreen.CameraConversionPage.name)
+            },
+            containerColor = if (selectedScreen == AppScreen.CameraConversionPage)
+                MaterialTheme.colorScheme.onTertiary
+            else
+                MaterialTheme.colorScheme.tertiary,
+
+
+
+            contentColor = if (selectedScreen == AppScreen.CameraConversionPage)
+                MaterialTheme.colorScheme.onSurface
+            else
+                MaterialTheme.colorScheme.outlineVariant,
+            shape = CircleShape,
             modifier = Modifier
-                .size(size)
+                .align(Alignment.BottomCenter)
+                .offset(y = fabOffsetY)
+                .size(65.dp * fabScale) // Adjust offset to position FAB correctly
         ) {
             Icon(
-                painter = painter,
-                contentDescription = contentDescription,
-                tint = tint,
-                modifier = Modifier.size(size)
+                painter = painterResource(id = R.drawable.photo),
+                contentDescription = "Camera",
+                modifier = Modifier.size(40.dp * fabScale)
             )
         }
     }
+}
 
-    enum class AppScreen() {
-        ConversionTextView,
-        ConversionCamera,
-        Charts,
-        Details
+@Composable
+fun BottomNavigationBar(
+    navController: NavHostController,
+    navBarHeight: Dp = 70.dp,
+    selectedScreen: AppScreen = AppScreen.HomePage,
+    onScreenSelected: (AppScreen) -> Unit,
+    hazeState: HazeState,
+    modifier: Modifier = Modifier
+) {
+
+    val iconSize = when {
+        navBarHeight < 70.dp -> 24.dp
+        navBarHeight < 90.dp -> 28.dp
+        else -> 32.dp
     }
+    val fabSize = 75.dp
+    val fabMargin = 8.dp
+    val cutoutRadius = with(LocalDensity.current) { (fabSize / 2 + fabMargin).toPx() }
+    val cornerRadius = with(LocalDensity.current) { 30.dp.toPx()}
+
+    Surface(
+        shape = Screen(cutoutRadius, cornerRadius),
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(75.dp)
+            .hazeEffect(
+                state = hazeState,
+                style = HazeMaterials.ultraThin(containerColor = MaterialTheme.colorScheme.primary)
+            ){
+                blurRadius = 30.dp
+                noiseFactor
+            }
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            Spacer(modifier = Modifier.weight(1f))
+
+            NavigationIcon(
+                isSelected = selectedScreen == AppScreen.HomePage,
+                onClick = {
+                    if (selectedScreen != AppScreen.HomePage) {
+                        onScreenSelected(AppScreen.HomePage)
+                    }
+                },
+                icon = Icons.Default.EuroSymbol,
+                iconSize = iconSize,
+                contentDescription = "Home",
+                defaultTint = MaterialTheme.colorScheme.inverseSurface,
+                selectedTint = MaterialTheme.colorScheme.tertiary // Adjust as needed
+            )
+
+            Spacer(modifier = Modifier.weight(3f))
+
+            // Charts Icon
+            NavigationIcon(
+                isSelected = selectedScreen == AppScreen.SearchChartPage,
+                onClick = {
+                    if (selectedScreen != AppScreen.SearchChartPage) {
+                        onScreenSelected(AppScreen.SearchChartPage)
+                    }                    },
+                icon = Icons.Default.Analytics,
+                iconSize = iconSize,
+                contentDescription = "Charts",
+                defaultTint = MaterialTheme.colorScheme.inverseSurface,
+                selectedTint = MaterialTheme.colorScheme.tertiary // Adjust as needed
+            )
+            Spacer(modifier = Modifier.weight(1f))
+
+        }
+    }
+}
+
+
+
+
+
+@Composable
+fun NavigationIcon(
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    icon: ImageVector,
+    contentDescription: String,
+    iconSize: Dp,
+    defaultTint: Color,
+    selectedTint: Color
+) {
+    val size by animateDpAsState(
+        targetValue = if (isSelected) iconSize * 1.2f else iconSize
+    )
+    val tint by animateColorAsState(
+        targetValue = if (isSelected) selectedTint else defaultTint
+    )
+
+    IconButton(
+        onClick = onClick,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.size(size)
+        )
+    }
+}
+
+
+
+@Composable
+fun AuthNavGraph(
+    navController: NavHostController,
+    hazeState: HazeState
+) {
+    NavHost(
+        navController = navController,
+        startDestination = "home_page"
+    ) {
+        navigation(startDestination = "home_page", route = "home_graph") {
+            composable("home_page") { MainScreenCurrencyConverterEditTextView(hazeState = hazeState) }
+            composable("home_page") { CameraConversionScreen() }
+            composable("past_activity_log"){ AddAndSearchChartsApp(hazeState = hazeState, navController = navController )}
+        }
+    }
+}
+
+
+
+object Routes {
+    const val HOME_PAGE = "home_page"
+    const val SEARCH_CHART_PAGE = "search_chart_page"
+    const val EXCHANGE_ANALYTICS_PAGE = "exchange_analytics_page"
+    const val CAMERA_CONVERSION_PAGE = "camera_conversion_page"
+}
+
+
+enum class AppScreen(val route: String) {
+    HomePage(Routes.HOME_PAGE),
+    SearchChartPage(Routes.SEARCH_CHART_PAGE),
+    ExchangeAnalyticsPage(Routes.EXCHANGE_ANALYTICS_PAGE),
+    CameraConversionPage(Routes.CAMERA_CONVERSION_PAGE)
+
+}
 
 
 
