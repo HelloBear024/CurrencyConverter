@@ -10,11 +10,13 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.currecy.mycurrencyconverter.model.cameraModel.CameraViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import dev.chrisbanes.haze.HazeState
 
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraConversionScreen(
+    hazeState: HazeState,
     cameraViewModel: CameraViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
@@ -26,6 +28,7 @@ fun CameraConversionScreen(
         composable("camera_preview") {
             CameraPreviewScreen(
                 cameraViewModel = cameraViewModel,
+                hazeState = hazeState,
                 onImageSelected = { uri ->
                     navController.navigate("image_conversion?uri=${Uri.encode(uri.toString())}")
                 }
@@ -37,9 +40,9 @@ fun CameraConversionScreen(
         ) { backStackEntry ->
             val uriString = backStackEntry.arguments?.getString("uri")!!
             ImageConversionScreen(
+                hazeState = hazeState,
                 imageUri = Uri.parse(uriString),
                 viewModel = cameraViewModel,
-                onBack = { navController.popBackStack() }
             )
         }
     }

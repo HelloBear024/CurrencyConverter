@@ -1,10 +1,10 @@
 [versions]
-agp = "8.6.0"
+agp = "8.5.0"
 converterGson = "2.9.0"
-hiltCompiler = "2.52"
+hiltCompiler = "2.56.2"
 hiltLifecycleViewmodel = "1.0.0-alpha03"
 hiltNavigationCompose = "1.2.0"
-kotlin = "1.9.22"
+kotlin = "2.1.0"
 coreKtx = "1.13.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -19,8 +19,10 @@ workRuntimeKtx = "2.9.1"
 navigationCompose = "2.8.1"
 navigationRuntimeKtx = "2.8.1"
 
+coilCompose = "3.1.0"
+
 hiltWork = "1.2.0"
-hilt = "2.52"
+hilt = "2.56.2"
 hiltCommon = "1.2.0"
 composeMaterial3 = "1.0.0-alpha25"
 
@@ -60,6 +62,7 @@ androidx-hilt-common = { group = "androidx.hilt", name = "hilt-common", version.
 androidx-compose-material3 = { group = "androidx.wear.compose", name = "compose-material3", version.ref = "composeMaterial3" }
 #androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 #icons
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 
@@ -68,3 +71,5 @@ androidx-material-icons-extended = { module = "androidx.compose.material:materia
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 hilt-android-gradle-plugin = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+

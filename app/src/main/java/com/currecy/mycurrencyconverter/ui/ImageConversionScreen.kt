@@ -7,16 +7,22 @@ import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,18 +35,27 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import androidx.room.util.copy
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.currecy.mycurrencyconverter.R
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
 import com.currecy.mycurrencyconverter.model.cameraModel.CameraViewModel
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -50,157 +65,41 @@ import androidx.compose.ui.geometry.Rect as ComposeRect
 
 @Composable
 fun ImageConversionScreen(
+    hazeState: HazeState,
     imageUri: Uri,
     viewModel: CameraViewModel = hiltViewModel(),
-    onBack: () -> Unit
 ) {
 
     val converterUIState by viewModel.converterUIState.collectAsState()
-
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
-
-    var textWithBoundingBoxes by remember { mutableStateOf<List<Pair<String, ComposeRect>>>(emptyList()) }
-    var imageWidth by remember { mutableStateOf(1f) }
-    var imageHeight by remember { mutableStateOf(1f) }
-    var scaledTextWithBoundingBoxes by remember { mutableStateOf<List<ScaledTextBoundingBox>>(emptyList()) }
     var selectedNumber by remember { mutableStateOf<String?>(null) }
 
-
-    // Get image dimensions
-    LaunchedEffect(imageUri) {
-        withContext(Dispatchers.IO) {
-            val source = ImageDecoder.createSource(context.contentResolver, imageUri)
-            val decoder = ImageDecoder.decodeDrawable(source)
-            imageWidth = decoder.intrinsicWidth.toFloat()
-            imageHeight = decoder.intrinsicHeight.toFloat()
-        }
-    }
-
-    // Perform text recognition on the image
-    LaunchedEffect(imageUri) {
-        performTextRecognitionOnImage(
-            context = context,
-            uri = imageUri,
-            onTextRecognized = { detectedTextList ->
-                textWithBoundingBoxes = detectedTextList
-                // Process numbers and perform conversion
-                val numbers = detectedTextList.mapNotNull { (text, _) ->
-                    text.toDoubleOrNull()
-                }
-                if (numbers.isNotEmpty()) {
-                    // For simplicity, take the first detected number
-                    coroutineScope.launch {
-                        viewModel.onNumberDetected(numbers.first().toString())
-                    }
-                }
-            }
-        )
-    }
-    // Display the image and overlay
-    Box(
+    Scaffold(
         modifier = Modifier.fillMaxSize()
-    ) {
-        // Display the image
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(imageUri)
-                .crossfade(true)
-                .build(),
-            contentDescription = "Selected Image",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.FillBounds,
-            alignment = Alignment.TopStart,
-            onSuccess = { success ->
-                val drawable = success.result.drawable
-                imageWidth = drawable.intrinsicWidth.toFloat()
-                imageHeight = drawable.intrinsicHeight.toFloat()
-                Log.d("ImageDimensions", "Image dimensions: $imageWidth x $imageHeight")
-            }
-        )
+    ) { _ ->
 
-        Canvas(
+        AsyncImage(
+            model = R.drawable.background,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(scaledTextWithBoundingBoxes) {
-                    detectTapGestures { offset ->
-                        // Handle tap at offset
-                        val tappedBox =
-                            scaledTextWithBoundingBoxes.firstOrNull { it.boundingBox.contains(offset) }
-                        if (tappedBox != null && tappedBox.text.toDoubleOrNull() != null) {
-                            selectedNumber = tappedBox.text
-                            coroutineScope.launch {
-                                viewModel.onNumberDetected(selectedNumber!!)
-                            }
-                        }
-                    }
-                }
+                .hazeSource(hazeState)
+        )
+
+
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
         ) {
 
-            val canvasWidth = size.width
-            val canvasHeight = size.height
-            Log.d("CanvasSize", "Canvas dimensions: $canvasWidth x $canvasHeight")
-            val scaleX = canvasWidth / imageWidth
-            val scaleY = canvasHeight / imageHeight
-            Log.d("ScalingFactors", "Scaling factors: scaleX = $scaleX, scaleY = $scaleY")
+            val maxWith = this.maxWidth
+            val maxHeight = this.maxHeight
 
-            val newScaledBoundingBoxes = mutableListOf<ScaledTextBoundingBox>()
-
-            for ((text, boundingBox) in textWithBoundingBoxes) {
-                val rect = ComposeRect(
-                    left = boundingBox.left * scaleX,
-                    top = boundingBox.top * scaleY,
-                    right = boundingBox.right * scaleX,
-                    bottom = boundingBox.bottom * scaleY
-                )
-
-                newScaledBoundingBoxes.add(ScaledTextBoundingBox(text, rect))
-
-                val color = when {
-                    selectedNumber == text -> Color.Blue.copy(alpha = 0.4f)
-                    text.toDoubleOrNull() != null -> Color.Green.copy(alpha = 0.4f)
-                    else -> Color.Red.copy(alpha = 0.4f)
-                }
-
-                drawRect(
-                    color = color,
-                    topLeft = Offset(rect.left, rect.top),
-                    size = Size(rect.width, rect.height),
-                    style = Fill
-                )
-            }
-
-            // Update the scaledTextWithBoundingBoxes
-            scaledTextWithBoundingBoxes = newScaledBoundingBoxes
-
-        }
-
-
-        if (selectedNumber != null && converterUIState.conversionResult.isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 50.dp),
-                contentAlignment = Alignment.TopCenter
+                    .padding(top = 30.dp)
             ) {
-                Text(
-                    text = "${converterUIState.selectedCurrencyTo.uppercase()}: ${converterUIState.conversionResult}",
-                    color = Color.White,
-                    style = MaterialTheme.typography.headlineLarge,
-                    modifier = Modifier
-                        .background(Color.Gray.copy(alpha = 0.7f))
-                        .padding(16.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 30.dp)
-        ) {
 
                 DropdownMenuItemRow(
                     currencyOptions = CurrencyOptionsData.options,
@@ -208,18 +107,78 @@ fun ImageConversionScreen(
                     selectedCurrencyTo = converterUIState.selectedCurrencyTo,
                     onCurrencyFromChange = { newCurrency ->
 
-                            viewModel.onCurrencyFromChange(newCurrency)
+                        viewModel.onCurrencyFromChange(newCurrency)
                     },
                     onCurrencyToChange = { newCurrency ->
-                            viewModel.onCurrencyToChange(newCurrency)
+                        viewModel.onCurrencyToChange(newCurrency)
                     },
                     onSwitchCurrencies = {
                         viewModel.switchCurrencies()
                     }
                 )
             }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
+                    .align(Alignment.BottomCenter)
+                    .height(maxHeight / 1.15f)
+                    .width(maxWith)
+                    .hazeEffect(
+                        state = hazeState,
+                        style = HazeMaterials.ultraThin()
+                    ) {
+                        blurRadius = 30.dp
+                        noiseFactor
+                    },
+            ) {
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .height(maxHeight / 1.2f)
+                        .width(maxWith - 20.dp)
+                        .align(Alignment.Center)
+                        .zIndex(2f)
+                ) {
+                    PinchToZoomView(
+                        imageContentDescription = "",
+                        imageUri = imageUri,
+                        modifier = Modifier.fillMaxSize(),
+                        onNumberDetected = {
+                            newNumber -> selectedNumber = newNumber
+                            coroutineScope.launch {
+                            viewModel.onNumberDetected(selectedNumber!!)
+                            }
+                        }
+                    )
+                }
+
+                if (selectedNumber != null && converterUIState.conversionResult.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .zIndex(5f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 150.dp),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text(
+                            text = "${converterUIState.selectedCurrencyTo.uppercase()}: ${converterUIState.conversionResult}",
+                            color = Color.White,
+                            style = MaterialTheme.typography.headlineLarge,
+                            modifier = Modifier
+                                .background(Color.Gray.copy(alpha = 0.7f))
+                                .padding(16.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                        )
+                    }
+                }
+            }
         }
+    }
 }
+
 
 suspend fun performTextRecognitionOnImage(
     context: Context,
@@ -229,19 +188,18 @@ suspend fun performTextRecognitionOnImage(
     val image: InputImage
     try {
         image = InputImage.fromFilePath(context, uri)
+
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         val visionText = recognizer.process(image).await()
 
         val textWithBoundingBoxes = mutableListOf<Pair<String, ComposeRect>>()
         Log.d("TextRecognition", "Starting text recognition")
-        // Extract text and bounding boxes
         for (block in visionText.textBlocks) {
             for (line in block.lines) {
                 for (element in line.elements) {
                     val text = element.text
                     val boundingBox: AndroidRect? = element.boundingBox
                     if (boundingBox != null) {
-                        // Convert AndroidRect to ComposeRect
                         val composeRect = ComposeRect(
                             left = boundingBox.left.toFloat(),
                             top = boundingBox.top.toFloat(),
@@ -262,7 +220,95 @@ suspend fun performTextRecognitionOnImage(
     }
 }
 
-data class ScaledTextBoundingBox(val text: String, val boundingBox: ComposeRect)
+@Composable
+fun PinchToZoomView(
+    modifier: Modifier = Modifier,
+    imageContentDescription: String = "",
+    imageUri: Uri,
+    onNumberDetected: (String) -> Unit
+) {
+    val context = LocalContext.current
 
+    var scale by remember { mutableStateOf(1f) }
+    var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
 
+    val minScale = 1f
+    val maxScale = 4f
+
+    var originalBoundingBoxes by remember {
+        mutableStateOf<List<Pair<String, ComposeRect>>>(emptyList())
+    }
+
+    LaunchedEffect(imageUri) {
+        performTextRecognitionOnImage(context, imageUri) { detectedTexts ->
+            originalBoundingBoxes = detectedTexts
+        }
+    }
+
+    Box(
+        modifier = modifier
+//            .background(Color(0x4DFFFFFF))
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    scale = (scale * zoom).coerceIn(minScale, maxScale)
+                    offsetX += pan.x
+                    offsetY += pan.y
+                }
+            }
+            .pointerInput(originalBoundingBoxes, scale, offsetX, offsetY) {
+                detectTapGestures { tapOffset ->
+                    val adjustedOffset = Offset(
+                        (tapOffset.x - offsetX) / scale,
+                        (tapOffset.y - offsetY) / scale
+                    )
+                    originalBoundingBoxes.firstOrNull {
+                        it.second.contains(adjustedOffset)
+                    }?.let { (text, _) ->
+                        if (text.toDoubleOrNull() != null) {
+                            onNumberDetected(text)
+                        }
+                    }
+                }
+            }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offsetX,
+                    translationY = offsetY
+                )
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(imageUri)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = imageContentDescription,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                originalBoundingBoxes.forEach { (text, rect) ->
+                    val color = if (text.toDoubleOrNull() != null) {
+                        Color.Green.copy(alpha = 0.4f)
+                    } else {
+                        Color.Red.copy(alpha = 0.4f)
+                    }
+                    drawRect(
+                        color = color,
+                        topLeft = Offset(rect.left, rect.top),
+                        size = Size(rect.width, rect.height),
+                        style = Fill
+                    )
+                }
+            }
+        }
+    }
+}
 

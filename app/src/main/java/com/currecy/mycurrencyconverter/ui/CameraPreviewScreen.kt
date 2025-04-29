@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -43,16 +44,21 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.currecy.mycurrencyconverter.R
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
 import com.currecy.mycurrencyconverter.model.cameraModel.CameraViewModel
+import com.currecy.mycurrencyconverter.utills.ui_utills.DropdownMenuSpinner
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -62,6 +68,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun CameraPreviewScreen(
     cameraViewModel: CameraViewModel = hiltViewModel(),
+    hazeState: HazeState,
     onImageSelected: (Uri) -> Unit
 ) {
 
@@ -81,18 +88,12 @@ fun CameraPreviewScreen(
     val captureAreaWidth = 300.dp
     val captureAreaHeight = 200.dp
     val captureAreaOffsetY = 150.dp
-    var clipBorderColor by remember { mutableStateOf(Color.Gray) } // Initially gray
-    var ignoreNewDetections by remember { mutableStateOf(false) }
+    var clipBorderColor by remember { mutableStateOf(Color.Gray) }
     var rectangleBounds by remember { mutableStateOf(RectF()) }
     // Get the current screen density in a composable context
     val density = LocalDensity.current
 
-    val captureAreaLeftPx = with(density) { ((layoutSize.width - captureAreaWidth.toPx()) / 2) }
-    val captureAreaTopPx = with(density) { captureAreaOffsetY.toPx() }
-    val captureAreaRightPx = captureAreaLeftPx + with(density) { captureAreaWidth.toPx() }
-    val captureAreaBottomPx = captureAreaTopPx + with(density) { captureAreaHeight.toPx() }
 
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var firstImageUri by remember { mutableStateOf<Uri?>(null) }
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -101,10 +102,7 @@ fun CameraPreviewScreen(
         }
     )
 
-
-
     val context = LocalContext.current
-
 
     val cameraPermissionState = rememberPermissionState(
         android.Manifest.permission.CAMERA
@@ -129,22 +127,22 @@ fun CameraPreviewScreen(
         if (permissionState.status.isGranted) {
             firstImageUri = getFirstImageFromGallery(context)
         } else if (permissionState.status.shouldShowRationale) {
-            // Show rationale to the user
-            // You can display a dialog explaining why the permission is needed
+
         } else {
 
         }
     }
 
     LaunchedEffect(Unit) {
-        // Request permission if not granted
+
         if (!permissionState.status.isGranted) {
             permissionState.launchPermissionRequest()
         } else {
-            // Only attempt to get the image if permission is granted
+
             firstImageUri = getFirstImageFromGallery(context)
         }
     }
+
 
 
     LaunchedEffect(Unit) {
@@ -155,6 +153,7 @@ fun CameraPreviewScreen(
 
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
+            .hazeSource(hazeState)
     ) {
         val boxWidth = constraints.maxWidth.toFloat()
         val boxHeight = constraints.maxHeight.toFloat()
@@ -209,18 +208,16 @@ fun CameraPreviewScreen(
         Box(modifier = Modifier
             .fillMaxWidth()
             .padding(top = 30.dp)
+            .zIndex(1f)
         ) {
-
-
             if (converterUIStateCamera.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator() // Show loading indicator
+                    CircularProgressIndicator()
                 }
             } else {
-                // Render dropdowns and other UI elements when loading is complete
                 DropdownMenuItemRow(
                     currencyOptions = CurrencyOptionsData.options,
                     selectedCurrencyFrom = converterUIStateCamera.selectedCurrencyFrom,
@@ -233,7 +230,8 @@ fun CameraPreviewScreen(
                     },
                     onSwitchCurrencies = {
                         cameraViewModel.switchCurrencies()
-                    }
+                    },
+                    modifier = Modifier.zIndex(3f)
                 )
             }
         }
@@ -244,14 +242,12 @@ fun CameraPreviewScreen(
         ) {
 
             TransparentClipLayout(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().zIndex(1f),
                 width = captureAreaWidth,
                 height = captureAreaHeight,
                 offsetY = captureAreaOffsetY,
                 color = clipBorderColor
             )
-
-
 
             if (converterUIStateCamera.detectedNumber != null && converterUIStateCamera.conversionResult.isNotEmpty())  {
                 Log.d("Camera Screen", "if statment is triggered but no fucking text display ")
@@ -279,37 +275,37 @@ fun CameraPreviewScreen(
 
         Box(
             modifier = Modifier
-                .size(115.dp)
+                .wrapContentSize()
                 .padding(
-                    bottom = 30.dp,
+                    bottom = 140.dp,
                     start = 30.dp
-                )// Square box size
+                )
                 .background(
                     Color.Gray,
                     shape = RoundedCornerShape(15.dp)
-                ) // Background color of the button
-                .align(Alignment.BottomStart) // Align to bottom-left corner
+                )
+                .align(Alignment.BottomStart)
                 .clickable {
-                    // Trigger gallery picker when clicked
                     imagePickerLauncher.launch("image/*")
                 },
             contentAlignment = Alignment.Center
         ) {
 
-            if (firstImageUri != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(firstImageUri)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = "First image from gallery",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(15.dp)),
-                    contentScale = ContentScale.Crop
-                )
+
+                if (firstImageUri != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(firstImageUri)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "First image from gallery",
+                        modifier = Modifier
+                            .size(85.dp)
+                            .clip(RoundedCornerShape(15.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
-        }
 
     }
 
@@ -351,27 +347,6 @@ suspend fun getFirstImageFromGallery(context: android.content.Context): Uri? {
 
 
 @Composable
-fun ShowSelectedImageScreen(imageUri: Uri) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
-        contentAlignment = Alignment.Center
-    ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(imageUri)
-                .crossfade(true)
-                .build(),
-            contentDescription = "Selected Image",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop // Scale the image to fill the container
-        )
-    }
-}
-
-
-@Composable
 fun DropdownMenuItemRow(
     currencyOptions: List<Pair<String, String>>,
     selectedCurrencyFrom: String,
@@ -381,14 +356,14 @@ fun DropdownMenuItemRow(
     onSwitchCurrencies: () -> Unit,
     modifier: Modifier = Modifier) {
 
-    // Track whether to animate to a larger size
     var isSwitched by remember { mutableStateOf(false) }
 
-    // Animate the size based on the switch state
     val dropdownSize by animateDpAsState(targetValue = if (isSwitched) 70.dp else 56.dp)
 
 
-    Row() {
+    Row(
+        modifier = modifier.padding(horizontal = 32.dp)
+    ) {
 
         Box(modifier =  Modifier.weight(1f)
             .padding(
@@ -400,7 +375,11 @@ fun DropdownMenuItemRow(
             DropdownMenuSpinner(
                 optionsList = currencyOptions,
                 selectedCurrency = selectedCurrencyFrom,
-                onCurrencySelected = onCurrencyFromChange
+                onCurrencySelected = onCurrencyFromChange,
+                backgroundColor = Color(0xFFFD5B66),
+                textColor = Color.White,
+                trailingColor = Color.White,
+                borderColor = Color.Transparent,
             )
         }
 
@@ -412,7 +391,8 @@ fun DropdownMenuItemRow(
         ) {
             Icon(
                 painter = painterResource(R.drawable.switch_sides_button),
-                contentDescription = "Switch Currency Place"
+                contentDescription = "Switch Currency Place",
+                tint = Color(0xFFFD5B66)
             )
         }
 
@@ -427,7 +407,11 @@ fun DropdownMenuItemRow(
             DropdownMenuSpinner(
                 optionsList = currencyOptions,
                 selectedCurrency = selectedCurrencyTo,
-                onCurrencySelected = onCurrencyToChange
+                onCurrencySelected = onCurrencyToChange,
+                backgroundColor = Color(0xFFFD5B66),
+                textColor = Color.White,
+                trailingColor = Color.White,
+                borderColor = Color.Transparent,
             )
         }
     }

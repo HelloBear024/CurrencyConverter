@@ -16,6 +16,16 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        exclusiveContent {
+            forRepository {
+                maven("https://oss.sonatype.org/content/repositories/snapshots") {
+                    name = "Sonatype SNAPSHOTs"
+                }
+            }
+            filter {
+                includeVersionByRegex("com\\.google\\.dagger.*", ".*", "HEAD-SNAPSHOT")
+            }
+        }
     }
 }
 

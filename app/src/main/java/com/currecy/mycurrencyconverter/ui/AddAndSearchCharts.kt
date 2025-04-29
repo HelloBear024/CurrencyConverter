@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -47,21 +49,31 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil3.compose.AsyncImage
+import com.currecy.mycurrencyconverter.R
 import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
 import com.currecy.mycurrencyconverter.model.searchChart.CardCurrencyViewModel
 import com.currecy.mycurrencyconverter.model.searchChart.ChartCurrencyState
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
+import com.currecy.mycurrencyconverter.utills.ui_utills.DropdownMenuSpinner
+import com.currecy.mycurrencyconverter.utills.ui_utills.GlassmorphicContainerTextInputs
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -70,81 +82,115 @@ import kotlin.math.roundToInt
 fun AddAndSearchChartsApp(
     navController: NavController,
     hazeState: HazeState
-){
+) {
     val detailViewModel: CardCurrencyViewModel = hiltViewModel()
     var showDialog by remember { mutableStateOf(false) }
 
     val conversions by detailViewModel.filteredConversions.collectAsState()
 
-    // **Collect the Current Search Query from the ViewModel**
     val searchQuery by detailViewModel.searchQuery.collectAsState()
-
-//    val filteredConversions = if (searchQuery.isEmpty()) {
-//        allConversions
-//    } else {
-//        allConversions.filter {
-//            it.sourceCurrency.contains(searchQuery, ignoreCase = true) ||
-//                    it.targetCurrency.contains(searchQuery, ignoreCase = true)
-//        }
-//    }
-
 
     LaunchedEffect(conversions) {
         Log.d("AddAndSearchChartsApp", "Current conversions: $conversions")
     }
 
-        Scaffold(
-            topBar = { SearchingBar(
-                query = searchQuery,
-                onQueryChange = { newQuery -> detailViewModel.setSearchQuery(newQuery)}
-            ) } ,
-            floatingActionButton = {
-                AddMoreContainersBtn(onClick = {
-                    showDialog = true
-                })
-            },
+    Scaffold(
+        topBar = {
+            GlassmorphicContainerTextInputs(
+                hazeState = hazeState
+            ) {
+                SearchingBar(
+                    query = searchQuery,
+                    onQueryChange = { newQuery -> detailViewModel.setSearchQuery(newQuery) }
+                )
+            }
+        },
+        floatingActionButton = {
+            AddMoreContainersBtn(onClick = {
+                showDialog = true
+            })
+        },
+        modifier = Modifier
+            .fillMaxSize()
+    ) { innerPadding ->
+
+        AsyncImage(
+            model = R.drawable.background,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-        ) { innerPadding ->
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding))
-            {
-                Column(
+                .hazeSource(hazeState)
+        )
+
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
+                .zIndex(3f)
+        ) {
+            val maxWith = this.maxWidth
+            val maxHeight = this.maxHeight
+
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
+                    .align(Alignment.BottomCenter)
+                    .height(maxHeight / 1.15f)
+                    .width(maxWith)
+                    .hazeEffect(
+                        state = hazeState,
+                        style = HazeMaterials.ultraThin()
+                    ) {
+                        blurRadius = 30.dp
+                        noiseFactor
+                    },
+            ) {
+
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 10.dp)
-                )  {
-                    ConversionList(
-                        conversions = conversions,
-                        onItemClick = { conversion ->
-                            navController.navigate("detail/${conversion.id}")
-                        },
-                        onDelete = { conversion ->
-                            detailViewModel.deleteConversion(conversion)
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                        .padding(innerPadding)
+                )
+                {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 10.dp)
+                    ) {
+                        ConversionList(
+                            conversions = conversions,
+                            onItemClick = { conversion ->
+                                navController.navigate("detail/${conversion.id}")
+                            },
+                            onDelete = { conversion ->
+                                detailViewModel.deleteConversion(conversion)
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
-                if (showDialog) {
-                    CurrencyConversionDialog(
-                        onDismissRequest = { showDialog = false },
-                        onConfirm = { source, target ->
-                            showDialog = false
-                            // Add new conversion to the list
-                            Log.d("AddAndSearchChartsApp", "Confirming conversion: $source -> $target")
-                            detailViewModel.addConversion(source, target)
-                        },
+                    if (showDialog) {
+                        CurrencyConversionDialog(
+                            onDismissRequest = { showDialog = false },
+                            onConfirm = { source, target ->
+                                showDialog = false
+                                // Add new conversion to the list
+                                Log.d(
+                                    "AddAndSearchChartsApp",
+                                    "Confirming conversion: $source -> $target"
+                                )
+                                detailViewModel.addConversion(source, target)
+                            },
 
-                        optionsList = CurrencyOptionsData.options,
-                        initialSourceCurrency = "usd",
-                        initialTargetCurrency = "eur"
-                    )
+                            optionsList = CurrencyOptionsData.options,
+                            initialSourceCurrency = "usd",
+                            initialTargetCurrency = "eur"
+                        )
+                    }
                 }
             }
         }
     }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,8 +199,6 @@ fun SearchingBar(
     onQueryChange: (String) -> Unit
 ){
     var active by rememberSaveable { mutableStateOf(false) }
-
-    // Focus Manager to handle focus state
     val focusManager = LocalFocusManager.current
 
     SearchBar(
@@ -165,9 +209,6 @@ fun SearchingBar(
         },
         onSearch = {
             Log.d("SearchingBar", "onSearch triggered with query: $query")
-            // Optionally handle the search action here
-            // For example, you could trigger a specific search event in the ViewModel
-            // Currently, it just closes the keyboard and the suggestions
             active = false
             focusManager.clearFocus()
         },
@@ -175,7 +216,7 @@ fun SearchingBar(
             .fillMaxWidth()
             .padding(8.dp),
         placeholder = { Text("Search Currency") },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
+//        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = {
@@ -184,15 +225,19 @@ fun SearchingBar(
                 }) {
                     Icon(Icons.Default.Close, contentDescription = "Clear Search")
                 }
+            } else {
+                Icon(Icons.Default.Search, contentDescription = "Search Icon")
             }
         },
+
+
         active = active,
         onActiveChange = { isActive ->
             Log.d("SearchingBar", "onActiveChange: $isActive")
             active = isActive
         }
     ) {
-        // Suggestions list directly within the SearchBar's content slot
+
         if (active && query.isNotEmpty()) {
             LazyColumn(
                 modifier = Modifier
@@ -221,149 +266,6 @@ fun SearchingBar(
         }
     }
 }
-
-
-//
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun SearchingBar(
-//    query: String,
-//    onQueryChange: (String) -> Unit
-//){
-//    var active by rememberSaveable { mutableStateOf(false) }
-//
-//    // Focus Manager to handle focus state
-//    val focusManager = LocalFocusManager.current
-//
-//    SearchBar(
-//        query = query,
-//        onQueryChange = { newQuery ->
-//            Log.d("SearchingBar", "onQueryChange: $newQuery")
-//            onQueryChange(newQuery)
-//        },
-//        onSearch = {
-//            Log.d("SearchingBar", "onSearch triggered with query: $query")
-//            // Optionally handle the search action
-//            active = false
-//            focusManager.clearFocus()
-//        },
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(8.dp),
-//        placeholder = { Text("Search Currency") },
-//        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
-//        trailingIcon = {
-//            if (query.isNotEmpty()) {
-//                IconButton(onClick = {
-//                    Log.d("SearchingBar", "Clear Search clicked")
-//                    onQueryChange("")
-//                }) {
-//                    Icon(Icons.Default.Close, contentDescription = "Clear Search")
-//                }
-//            }
-//        },
-//        active = active,
-//        onActiveChange = { isActive ->
-//            Log.d("SearchingBar", "onActiveChange: $isActive")
-//            active = isActive
-//        }
-//    ) {
-//        // Suggestions list directly within the SearchBar's content slot
-//        if (active && query.isNotEmpty()) {
-//            LazyColumn(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .background(MaterialTheme.colorScheme.surface)
-//            ) {
-//                val suggestions = listOf("USD", "EUR", "JPY", "GBP").filter {
-//                    it.contains(query, ignoreCase = true)
-//                }
-//                items(suggestions) { suggestion ->
-//                    Text(
-//                        text = suggestion,
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .clickable {
-//                                Log.d("SearchingBar", "Suggestion clicked: $suggestion")
-//                                onQueryChange(suggestion)
-//                                active = false
-//                                focusManager.clearFocus()
-//                            }
-//                            .padding(16.dp),
-//                        style = MaterialTheme.typography.bodyMedium
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//
-//
-
-//
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun SearchingBar(
-//    query: String,
-//    onQueryChange: (String) -> Unit
-//){
-//    var expanded by rememberSaveable { mutableStateOf(false) }
-//
-//    // **Focus Manager to handle focus state**
-//    val focusManager = LocalFocusManager.current
-//
-//    SearchBar(
-//        query = query,
-//        onQueryChange = { newQuery ->
-//            onQueryChange(newQuery)
-//            expanded = newQuery.isNotEmpty()
-//        },
-//        onSearch = {
-//            // Optionally handle the search action
-//            expanded = false
-//            focusManager.clearFocus()
-//        },
-//        modifier = Modifier.fillMaxWidth(),
-//        placeholder = { Text("Search Currency") },
-//        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-//        trailingIcon = {
-//            if (query.isNotEmpty()) {
-//                IconButton(onClick = { onQueryChange("") }) {
-//                    Icon(Icons.Default.Close, contentDescription = "Clear Search")
-//                }
-//            }
-//        },
-//        active = expanded,
-//        onActiveChange = { isActive ->
-//            expanded = isActive
-//        }
-//    ) {
-//        // **Suggestions Dropdown**
-//        DropdownMenu(
-//            expanded = expanded,
-//            onDismissRequest = { expanded = false },
-//            modifier = Modifier.fillMaxWidth()
-//        ) {
-//            // Example suggestions; replace with actual logic or ViewModel data
-//            val suggestions = listOf("USD", "EUR", "JPY", "GBP").filter {
-//                it.contains(query, ignoreCase = true)
-//            }
-//            suggestions.forEach { suggestion ->
-//                DropdownMenuItem(
-//                    text = { Text(suggestion) },
-//                    onClick = {
-//                        onQueryChange(suggestion)
-//                        expanded = false
-//                        focusManager.clearFocus()
-//                    }
-//                )
-//            }
-//        }
-//    }
-//}
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
