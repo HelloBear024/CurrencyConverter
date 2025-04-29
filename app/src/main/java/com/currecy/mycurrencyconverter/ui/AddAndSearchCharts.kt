@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -54,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -69,7 +71,7 @@ import com.currecy.mycurrencyconverter.model.searchChart.CardCurrencyViewModel
 import com.currecy.mycurrencyconverter.model.searchChart.ChartCurrencyState
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
 import com.currecy.mycurrencyconverter.utills.ui_utills.DropdownMenuSpinner
-import com.currecy.mycurrencyconverter.utills.ui_utills.GlassmorphicContainerTextInputs
+import com.currecy.mycurrencyconverter.utills.ui_utills.GlassmorphicContainerSearchbar
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
@@ -96,8 +98,14 @@ fun AddAndSearchChartsApp(
 
     Scaffold(
         topBar = {
-            GlassmorphicContainerTextInputs(
-                hazeState = hazeState
+            GlassmorphicContainerSearchbar(
+                hazeState = hazeState,
+                modifier = Modifier
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 20.dp
+                        )
             ) {
                 SearchingBar(
                     query = searchQuery,
@@ -214,19 +222,37 @@ fun SearchingBar(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        placeholder = { Text("Search Currency") },
-//        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
+            .padding(bottom = 4.dp)
+        ,
+        colors = SearchBarDefaults.colors(
+            containerColor = Color.Transparent,
+            dividerColor = Color.Transparent
+        ),
+        placeholder = { Text(
+            "Search Currency",
+            color = Color(0xFFFD5B66),
+            fontSize = 16.sp,
+        )
+                      },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = {
                     Log.d("SearchingBar", "Clear Search clicked")
                     onQueryChange("")
                 }) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear Search")
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Clear Search",
+                        tint = Color(0xFFFD5B66),
+
+                    )
                 }
             } else {
-                Icon(Icons.Default.Search, contentDescription = "Search Icon")
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = "Search Icon",
+                    tint = Color(0xFFFD5B66)
+                    )
             }
         },
 
@@ -235,14 +261,13 @@ fun SearchingBar(
         onActiveChange = { isActive ->
             Log.d("SearchingBar", "onActiveChange: $isActive")
             active = isActive
-        }
+        },
     ) {
-
         if (active && query.isNotEmpty()) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(Color.Transparent)
             ) {
                 val suggestions = listOf("USD", "EUR", "JPY", "GBP").filter {
                     it.contains(query, ignoreCase = true)
@@ -259,6 +284,9 @@ fun SearchingBar(
                                 focusManager.clearFocus()
                             }
                             .padding(16.dp),
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFFD5B66),
+                        fontSize = 16.sp,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
