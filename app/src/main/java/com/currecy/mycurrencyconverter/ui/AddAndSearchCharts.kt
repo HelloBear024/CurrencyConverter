@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
@@ -38,7 +39,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,7 +60,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -70,7 +69,8 @@ import com.currecy.mycurrencyconverter.data.CurrencyOptionsData
 import com.currecy.mycurrencyconverter.model.searchChart.CardCurrencyViewModel
 import com.currecy.mycurrencyconverter.model.searchChart.ChartCurrencyState
 import com.currecy.mycurrencyconverter.ui.theme.MyCurrencyConverterTheme
-import com.currecy.mycurrencyconverter.utills.ui_utills.DropdownMenuSpinner
+import com.currecy.mycurrencyconverter.utills.ui_utills.CurrencyConversionDialog
+import com.currecy.mycurrencyconverter.utills.ui_utills.CustomButton
 import com.currecy.mycurrencyconverter.utills.ui_utills.GlassmorphicContainerSearchbar
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
@@ -113,11 +113,7 @@ fun AddAndSearchChartsApp(
                 )
             }
         },
-        floatingActionButton = {
-            AddMoreContainersBtn(onClick = {
-                showDialog = true
-            })
-        },
+        floatingActionButton = {},
         modifier = Modifier
             .fillMaxSize()
     ) { innerPadding ->
@@ -132,7 +128,8 @@ fun AddAndSearchChartsApp(
         )
 
         BoxWithConstraints(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .zIndex(3f)
         ) {
             val maxWith = this.maxWidth
@@ -152,13 +149,10 @@ fun AddAndSearchChartsApp(
                         noiseFactor
                     },
             ) {
-
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
-                )
-                {
+                ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -172,7 +166,9 @@ fun AddAndSearchChartsApp(
                             onDelete = { conversion ->
                                 detailViewModel.deleteConversion(conversion)
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            onAddButtonClick = { showDialog = true },
+                            hazeState = hazeState
                         )
                     }
 
@@ -181,7 +177,6 @@ fun AddAndSearchChartsApp(
                             onDismissRequest = { showDialog = false },
                             onConfirm = { source, target ->
                                 showDialog = false
-                                // Add new conversion to the list
                                 Log.d(
                                     "AddAndSearchChartsApp",
                                     "Confirming conversion: $source -> $target"
@@ -191,7 +186,8 @@ fun AddAndSearchChartsApp(
 
                             optionsList = CurrencyOptionsData.options,
                             initialSourceCurrency = "usd",
-                            initialTargetCurrency = "eur"
+                            initialTargetCurrency = "eur",
+                            hazeState = hazeState
                         )
                     }
                 }
@@ -269,17 +265,22 @@ fun SearchingBar(
                     .fillMaxWidth()
                     .background(Color.Transparent)
             ) {
-                val suggestions = listOf("USD", "EUR", "JPY", "GBP").filter {
-                    it.contains(query, ignoreCase = true)
-                }
-                items(suggestions) { suggestion ->
+
+                val suggestions: List<Pair<String,String>> = CurrencyOptionsData.options
+                    .filter { (name, code) ->
+                        name.contains(query, ignoreCase = true) ||
+                                code.contains(query, ignoreCase = true)
+                    }
+
+
+                items(suggestions) { (name, code) ->
                     Text(
-                        text = suggestion,
+                        text = name + code,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                Log.d("SearchingBar", "Suggestion clicked: $suggestion")
-                                onQueryChange(suggestion)
+
+                                onQueryChange(name + code)
                                 active = false
                                 focusManager.clearFocus()
                             }
@@ -296,102 +297,15 @@ fun SearchingBar(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CurrencyConversionDialog(
-    onDismissRequest: () -> Unit,
-    onConfirm: (String, String) -> Unit,
-    optionsList: List<Pair<String, String>>,
-    initialSourceCurrency: String = optionsList[0].second,
-    initialTargetCurrency: String = optionsList[1].second
-) {
-    // State for selected currencies
-    var sourceCurrency by remember { mutableStateOf(initialSourceCurrency) }
-    var targetCurrency by remember { mutableStateOf(initialTargetCurrency) }
-
-    LaunchedEffect(sourceCurrency, targetCurrency) {
-        Log.d("CurrencyConversionDialog", "Selected source: $sourceCurrency, target: $targetCurrency")
-    }
-
-    Dialog(
-        onDismissRequest = onDismissRequest
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Source Currency Dropdown
-                Text(text = "From:", style = MaterialTheme.typography.bodyMedium)
-                DropdownMenuSpinner(
-                    optionsList = optionsList,
-                    selectedCurrency = sourceCurrency,
-                    onCurrencySelected = {
-                        sourceCurrency = it
-                        Log.d("CurrencyConversionDialog", "Source currency selected: $it")
-
-                    },
-                    modifier = Modifier.fillMaxWidth()
-
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Target Currency Dropdown
-                Text(text = "To:", style = MaterialTheme.typography.bodyMedium)
-                DropdownMenuSpinner(
-                    optionsList = optionsList,
-                    selectedCurrency = targetCurrency,
-                    onCurrencySelected = { targetCurrency = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(
-                        onClick = onDismissRequest,
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        Text("Cancel")
-                    }
-                    TextButton(
-
-                        onClick = {
-                            Log.d("CurrencyConversionDialog", "Confirm button clicked with: $sourceCurrency -> $targetCurrency")
-
-                            onConfirm(sourceCurrency, targetCurrency)
-                        }
-                    ) {
-                        Text("Confirm")
-                    }
-                }
-            }
-        }
-    }
-}
-
 
 @Composable
 fun ConversionList(
     conversions: List<ChartCurrencyState>,
     onItemClick: (ChartCurrencyState) -> Unit,
     onDelete: (ChartCurrencyState) -> Unit,
-    modifier: Modifier = Modifier
+    onAddButtonClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    hazeState: HazeState
 ) {
     val listState = rememberLazyListState()
 
@@ -439,9 +353,8 @@ fun ConversionList(
                                         }
                                     }
                                 },
-                                onHorizontalDrag  = { change, dragAmount ->
+                                onHorizontalDrag = { change, dragAmount ->
                                     change.consume()
-                                    // Update the offset, limiting to left swipe only
                                     val newOffset = (offsetX.value + dragAmount).coerceAtMost(0f)
                                     scope.launch {
                                         offsetX.snapTo(newOffset)
@@ -449,130 +362,67 @@ fun ConversionList(
                                 }
                             )
                         }
-                        // Apply the animated offset to the item
                         .offset { IntOffset(offsetX.value.roundToInt(), 0) }
                 ) {
-                    // Background delete icon with fading effect based on swipe progress
-                    val deleteIconAlpha = (-offsetX.value / 300f).coerceIn(0f, 1f)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(end = 16.dp),
-                        contentAlignment = Alignment.CenterEnd
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = Color.Red.copy(alpha = deleteIconAlpha),
-                            modifier = Modifier
-                                .size(24.dp)
-                        )
-                    }
-
-                    // Foreground item content
                     ConversionCard(
                         conversion = conversion,
                         onItemClick = { onItemClick(conversion) },
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxSize(),
+                        hazeState = hazeState
                     )
                 }
             }
         }
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                CustomButton(
+                    onClick = onAddButtonClick
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = Color(0xFFFD5B66)
+                    )
+                }
+            }
+
+
+        }
     }
 }
-
-//
-//@Composable
-//fun ConversionList(
-//    conversions: List<ChartCurrencyState>,
-//    onItemClick: (ChartCurrencyState) -> Unit,
-//    onDelete: (ChartCurrencyState) -> Unit,
-//    modifier: Modifier = Modifier
-//) {
-//    val listState = rememberLazyListState()
-//
-//    LazyColumn(
-//        state = listState,
-//        modifier = modifier
-//            .fillMaxSize()
-//            .padding(16.dp)
-//    ) {
-//        items(conversions, key = { it.id }) { conversion ->
-//            var isSwiped by remember { mutableStateOf(false) }
-//
-//            if (!isSwiped) {
-//                var offsetX by remember { mutableStateOf(0f) }
-//                val scope = rememberCoroutineScope()
-//
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .wrapContentHeight()
-//                        .padding(vertical = 4.dp)
-//                        .background(Color.Transparent)
-//                        .pointerInput(Unit) {
-//                            detectHorizontalDragGestures { change, dragAmount ->
-//                                change.consume()
-//                                offsetX += dragAmount
-//                                // Limit swipe to left only
-//                                if (offsetX > 0) {
-//                                    offsetX = 0f
-//                                }
-//                                // Threshold for swipe to delete
-//                                if (-offsetX > 300f) {
-//                                    isSwiped = true
-//                                    onDelete(conversion)
-//                                }
-//                            }
-//                        }
-//                ) {
-//                    Box(
-//                        modifier = Modifier
-//                            .fillMaxSize()
-//                            .padding(end = 16.dp),
-//                        contentAlignment = Alignment.CenterEnd
-//                    ) {
-//                        Icon(
-//                            imageVector = Icons.Default.Delete,
-//                            contentDescription = "Delete",
-//                            tint = Color.White
-//                        )
-//                    }
-//
-//                    ConversionCard(
-//                        conversion = conversion,
-//                        onItemClick = { onItemClick(conversion)},
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
 
 @Composable
 fun ConversionCard(
     conversion: ChartCurrencyState,
     onItemClick: () -> Unit,
-    modifier: Modifier = Modifier
+    hazeState: HazeState,
+    modifier: Modifier = Modifier,
 ) {
     val currentRate = conversion.currentRate
     val percentageChange = conversion.percentageChange
     Log.d("AddAndSearchChart", "${percentageChange}")
 
-
-    Card(
+    Box(
         modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
             .fillMaxWidth()
-            .clickable { onItemClick() },
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .clickable { onItemClick() }
+            .hazeEffect(
+                state = hazeState,
+                style = HazeMaterials.ultraThin()
+            ) {
+                blurRadius = 50.dp
+            },
     ) {
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp),
+                    .padding(vertical = 16.dp, horizontal = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Box(
@@ -580,23 +430,26 @@ fun ConversionCard(
                         .wrapContentHeight()
                         .align(Alignment.CenterVertically)
                 ) {
-
                     Text(
                         text = "${conversion.sourceCurrency.uppercase()}/${conversion.targetCurrency.uppercase()}",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 25.sp
+                        color = Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
                 }
 
             Column(
-                horizontalAlignment = Alignment.End
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(end = 8.dp)
             ) {
                 Text(
                     text = String.format("%.5f",currentRate),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 20.sp
+                    fontSize = 20.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Spacer(Modifier.height(5.dp))
@@ -604,7 +457,7 @@ fun ConversionCard(
                 Box(
                     modifier = Modifier
                         .background(
-                            color = if (percentageChange >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.errorContainer,  // Green for positive, Red for negative
+                            color = if (percentageChange >= 0) Color(0x80077D07) else Color( 0x99FD5B66 ),
                             shape = RoundedCornerShape(8.dp)
                         )
                         .padding(horizontal = 8.dp, vertical = 4.dp)
