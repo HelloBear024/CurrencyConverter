@@ -1,5 +1,6 @@
 package com.currecy.mycurrencyconverter.model.cameraModel
 
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,13 @@ class CameraViewModel @Inject constructor(
     private val currencyDao: CurrencyRateDao,
     private val preferencesRepository: CameraPagePreferencesRepository
 ): ViewModel() {
+
+
+    //new Implimentation
+    private val _fullBitmap = MutableStateFlow<Bitmap?>(null)
+    val fullBitmap: StateFlow<Bitmap?> = _fullBitmap
+
+
 
     private val _converterUIState = MutableStateFlow(CurrencyCameraUIState())
     val converterUIState: StateFlow<CurrencyCameraUIState> = _converterUIState.asStateFlow()

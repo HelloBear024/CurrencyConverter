@@ -50,7 +50,8 @@ fun BottomNavigationBar(
     selectedScreen: AppScreen = AppScreen.HomePage,
     onScreenSelected: (AppScreen) -> Unit,
     hazeState: HazeState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    takePhoto: (Boolean) -> Unit
 ) {
 
     val iconSize = when {
@@ -79,6 +80,8 @@ fun BottomNavigationBar(
             onClick = {
                 if (selectedScreen != AppScreen.CameraConversionPage) {
                     onScreenSelected(AppScreen.CameraConversionPage)
+                } else {
+                    takePhoto(true)
                 }
             },
             containerColor = Color.White,
@@ -125,7 +128,6 @@ fun BottomNavigationBar(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-
                     NavigationIcon(
                         isSelected = selectedScreen == AppScreen.HomePage,
                         onClick = {

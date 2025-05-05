@@ -5,9 +5,12 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,11 +37,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -60,6 +66,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import kotlin.math.min
 import android.graphics.Rect as AndroidRect
 import androidx.compose.ui.geometry.Rect as ComposeRect
 
@@ -69,6 +76,11 @@ fun ImageConversionScreen(
     imageUri: Uri,
     viewModel: CameraViewModel = hiltViewModel(),
 ) {
+
+
+    // newImplimentations
+
+
 
     val converterUIState by viewModel.converterUIState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -225,9 +237,20 @@ fun PinchToZoomView(
     modifier: Modifier = Modifier,
     imageContentDescription: String = "",
     imageUri: Uri,
-    onNumberDetected: (String) -> Unit
+    onNumberDetected: (String) -> Unit,
 ) {
     val context = LocalContext.current
+
+    val source = ImageDecoder.createSource(context.contentResolver, imageUri)
+    val (srcW, srcH) = ImageDecoder.decodeBitmap(source) { c, _, _ ->
+        c.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        c.isMutableRequired = false
+        c.setTargetSampleSize(1)      // no down‑sample, we just want bounds
+    }.let { it.width to it.height }
+
+
+    var dstSize by remember { mutableStateOf(IntSize.Zero) }
+
 
     var scale by remember { mutableStateOf(1f) }
     var offsetX by remember { mutableStateOf(0f) }
@@ -235,6 +258,10 @@ fun PinchToZoomView(
 
     val minScale = 1f
     val maxScale = 4f
+
+    val metrics = remember(srcW, srcH, dstSize) {
+        ImageMetrics(srcW, srcH, dstSize.width.toFloat(), dstSize.height.toFloat())
+    }
 
     var originalBoundingBoxes by remember {
         mutableStateOf<List<Pair<String, ComposeRect>>>(emptyList())
@@ -246,30 +273,25 @@ fun PinchToZoomView(
         }
     }
 
+    val transformState = rememberTransformableState { zoom, pan, _ ->
+        scale = (scale * zoom).coerceIn(minScale, maxScale)
+        offsetX += pan.x
+        offsetY += pan.y
+    }
+
     Box(
         modifier = modifier
 //            .background(Color(0x4DFFFFFF))
             .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(minScale, maxScale)
-                    offsetX += pan.x
-                    offsetY += pan.y
-                }
-            }
+            .transformable(state = transformState)
             .pointerInput(originalBoundingBoxes, scale, offsetX, offsetY) {
                 detectTapGestures { tapOffset ->
-                    val adjustedOffset = Offset(
-                        (tapOffset.x - offsetX) / scale,
-                        (tapOffset.y - offsetY) / scale
-                    )
-                    originalBoundingBoxes.firstOrNull {
-                        it.second.contains(adjustedOffset)
-                    }?.let { (text, _) ->
-                        if (text.toDoubleOrNull() != null) {
-                            onNumberDetected(text)
+                    val srcPt = metrics.unmap(tapOffset, offsetX, offsetY)
+                    originalBoundingBoxes
+                        .firstOrNull { it.second.contains(srcPt) }
+                        ?.let { (text, _) ->
+                            if (text.toDoubleOrNull() != null) onNumberDetected(text)
                         }
-                    }
                 }
             }
     ) {
@@ -290,11 +312,13 @@ fun PinchToZoomView(
                     .build(),
                 contentDescription = imageContentDescription,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().onGloballyPositioned { dstSize = it.size }
             )
 
             Canvas(modifier = Modifier.fillMaxSize()) {
                 originalBoundingBoxes.forEach { (text, rect) ->
+
+                    val mapped = metrics.map(rect)
                     val color = if (text.toDoubleOrNull() != null) {
                         Color.Green.copy(alpha = 0.4f)
                     } else {
@@ -302,8 +326,8 @@ fun PinchToZoomView(
                     }
                     drawRect(
                         color = color,
-                        topLeft = Offset(rect.left, rect.top),
-                        size = Size(rect.width, rect.height),
+                        topLeft = Offset(mapped.left, mapped.top),
+                        size = Size(mapped.width, mapped.height),
                         style = Fill
                     )
                 }
@@ -311,4 +335,27 @@ fun PinchToZoomView(
         }
     }
 }
+
+data class ImageMetrics(
+    val srcW: Int,
+    val srcH: Int,
+    val dstW: Float,
+    val dstH: Float
+) {
+    private val scale = min(dstW / srcW, dstH / srcH)
+    private val dx    = (dstW - srcW * scale) / 2f
+    private val dy    = (dstH - srcH * scale) / 2f
+
+    fun map(r: ComposeRect): ComposeRect = ComposeRect(
+        left   = r.left   * scale + dx,
+        top    = r.top    * scale + dy,
+        right  = r.right  * scale + dx,
+        bottom = r.bottom * scale + dy
+    )
+    fun unmap(p: Offset, offsetX: Float, offsetY: Float) = Offset(
+        x = (p.x - offsetX - dx)/scale,
+        y = (p.y - offsetY - dy)/scale
+    )
+}
+
 

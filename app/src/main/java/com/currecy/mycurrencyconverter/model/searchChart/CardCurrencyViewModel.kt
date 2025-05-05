@@ -88,60 +88,6 @@ class CardCurrencyViewModel @Inject constructor (
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
 
-//    val conversions: StateFlow<List<ChartCurrencyState>> = userRepo.getAllPreferences()
-//        .map { preferences ->
-//            preferences.map { preference ->
-//
-//                val firstCurrentRate = ratesRepo.getCurrentRate(preference.firstCurrencyCode) ?: 0.0
-//                val firstPreviousRate = ratesRepo.getPreviousRate(preference.firstCurrencyCode) ?: 0.0
-//
-//                val secondCurrentRate = ratesRepo.getCurrentRate(preference.secondCurrencyCode) ?: 0.0
-//                val secondPreviousRate = ratesRepo.getPreviousRate(preference.secondCurrencyCode) ?: 0.0
-//
-//                Log.d("CardCurrencyViewModel", "First Current Rate ($firstCurrentRate), First Previous Rate ($firstPreviousRate)")
-//                Log.d("CardCurrencyViewModel", "Second Current Rate ($secondCurrentRate), Second Previous Rate ($secondPreviousRate)")
-//
-//
-//                // Calculate the combined exchange rate for today (USD/EUR)
-//                val todayRate = if (secondCurrentRate != 0.0) {
-//                    secondCurrentRate / firstCurrentRate
-//                } else 0.0
-//
-//                Log.d("CardCurrencyViewModel", "todayRate : ($todayRate)")
-//
-//
-//                // Calculate the combined exchange rate for yesterday (USD/EUR)
-//                val yesterdayRate = if (secondPreviousRate != 0.0) {
-//                    secondPreviousRate / firstPreviousRate
-//                } else 0.0
-//
-//                Log.d("CardCurrencyViewModel", "yesterdayRate : ($yesterdayRate)")
-//
-//
-//                // Calculate the percentage change in the combined exchange rate
-//                val percentageChange = if (yesterdayRate > 0) {
-//                    ((todayRate - yesterdayRate) / yesterdayRate) * 100
-//                } else {
-//                    0.0
-//                }
-//
-//                Log.d("CardCurrencyViewModel", "Percentage Change: $percentageChange")
-//
-//                ChartCurrencyState(
-//                    id = preference.id,
-//                    sourceCurrency = preference.firstCurrencyCode,
-//                    targetCurrency = preference.secondCurrencyCode,
-//                    currentRate = todayRate,
-//                    percentageChange = percentageChange
-//
-//                )
-//            }
-//        }
-//        .onEach { list ->
-//            Log.d("CardCurrencyViewModel", "Fetched conversions: $list")
-//        }
-//        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
     // Function to add a new conversion
     fun addConversion(source: String, target: String) {
         Log.d("CardCurrencyViewModel", "Adding conversion: $source -> $target")

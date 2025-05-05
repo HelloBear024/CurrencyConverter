@@ -86,10 +86,10 @@ dependencies {
 
 
     kapt("androidx.room:room-compiler:2.7.1")
-    implementation("androidx.camera:camera-core:1.1.0")
-    implementation("androidx.camera:camera-camera2:1.1.0")
-    implementation("androidx.camera:camera-lifecycle:1.1.0")
-    implementation("androidx.camera:camera-view:1.0.0-alpha31")
+    implementation("androidx.camera:camera-core:1.4.2")
+    implementation("androidx.camera:camera-camera2:1.4.2")
+    implementation("androidx.camera:camera-lifecycle:1.4.2")
+    implementation("androidx.camera:camera-view:1.4.2")
     implementation ("com.google.mlkit:text-recognition:16.0.0")
     debugImplementation ("androidx.room:room-testing:2.4.2")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.0")
@@ -118,6 +118,8 @@ dependencies {
 
     implementation("dev.chrisbanes.haze:haze:1.5.3")
     implementation("dev.chrisbanes.haze:haze-materials:1.5.3")
+
+    implementation("io.github.ehsannarmani:compose-charts:0.1.2")
 
     // icons
     implementation (libs.androidx.material.icons.extended)

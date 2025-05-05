@@ -1,6 +1,7 @@
 package com.currecy.mycurrencyconverter.ui
 
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.background
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,11 +46,20 @@ import com.currecy.mycurrencyconverter.model.chartModel.NewsViewModel
 import com.currecy.mycurrencyconverter.model.searchChart.CardCurrencyViewModel
 import com.currecy.mycurrencyconverter.ui.LineChart.ExchangeRateLineChart
 import com.currecy.mycurrencyconverter.ui.News.NewsItem
+import dev.chrisbanes.haze.HazeState
+import ir.ehsannarmani.compose_charts.LineChart
+import ir.ehsannarmani.compose_charts.models.AnimationMode
+import ir.ehsannarmani.compose_charts.models.DotProperties
+import ir.ehsannarmani.compose_charts.models.DrawStyle
+import ir.ehsannarmani.compose_charts.models.LabelProperties
+import ir.ehsannarmani.compose_charts.models.Line
+
 
 @Composable
 fun DetailScreen(
-    conversionId: Int,
+    conversionId: String,
     navController: NavController,
+    hazeState: HazeState,
     cardCurrencyViewModel: CardCurrencyViewModel = hiltViewModel(),
     detailViewModel: DetailViewModel = hiltViewModel(),
     newsViewModel: NewsViewModel = hiltViewModel()
@@ -56,9 +67,11 @@ fun DetailScreen(
 
     val scrollState = rememberLazyListState()
 
-    val conversion by cardCurrencyViewModel.getConversionById(conversionId).collectAsState(initial = null)
+    val conversion by cardCurrencyViewModel.getConversionById(conversionId.toInt()).collectAsState(initial = null)
     val uiState by detailViewModel.uiState.collectAsState()
     val newsArticles by newsViewModel.newsArticles.collectAsState()
+
+
 
     LaunchedEffect(conversion?.sourceCurrency, conversion?.targetCurrency) {
         conversion?.let {
@@ -107,6 +120,14 @@ fun DetailScreen(
                         fontSize = 35.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    ChartSectionNew(
+                        uiState = uiState,
+                        chartVisibilityState = chartVisibilityState,
+                        selectedTimeRange = selectedTimeRange,
+                        onTimeRangeSelected = { timeRange ->
+                            selectedTimeRange = timeRange
+                        })
 
                     ChartSection(
                         uiState = uiState,
@@ -274,6 +295,93 @@ fun TimeRangeSelection(
         }
     }
 }
+
+@Composable
+fun ChartSectionNew(
+    uiState: DetailUiState,
+    chartVisibilityState: MutableTransitionState<Boolean>,
+    selectedTimeRange: TimeRange,
+    onTimeRangeSelected: (TimeRange) -> Unit
+) {
+    AnimatedVisibility(visibleState = chartVisibilityState) {
+        Box(
+            modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .fillMaxWidth()
+                .padding(5.dp)
+        ) {
+            Column {
+                when {
+                    uiState.isLoading -> {  }
+                    uiState.errorMessage != null -> {}
+                    else -> {
+
+                        if (uiState.chartData.isNotEmpty()) {
+
+                            val lines = remember(uiState.chartData) {
+                                listOf(
+                                    Line(
+                                        label = "${selectedTimeRange.name} rate",
+                                        values = uiState.chartData.map { it.second },
+                                        color = SolidColor(Color(0xFF23af92)),
+                                        firstGradientFillColor = Color(0xFF2BC0A1).copy(alpha = .5f),
+                                        secondGradientFillColor = Color.Transparent,
+                                        drawStyle = DrawStyle.Stroke(width = 2.dp),
+                                        dotProperties = DotProperties(enabled = true),
+                                        curvedEdges = true,
+                                    )
+                                )
+                            }
+
+                            val dateLabels = uiState.chartData.map { it.first }
+
+                            val labelProps = LabelProperties(
+                                enabled = true,
+                                labels = dateLabels,
+                            )
+
+
+
+                            val points = uiState.chartData.map { it.second }
+                            Log.d("CharDetailsPage", "$points")
+                            val rawMin  = points.minOrNull() ?: 0.0
+                            val rawMax  = points.maxOrNull() ?: 0.0
+
+                            val range   = (rawMax - rawMin).takeIf { it != 0.0 } ?: 0.0001
+                            val pad     = range * 0.05
+                            val minVal  = rawMin - pad
+                            val maxVal  = rawMax + pad
+
+                            LineChart(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp),
+                                data = lines,
+                                minValue        = minVal,
+                                maxValue        = maxVal,
+                                labelProperties = labelProps ,
+                                animationMode = AnimationMode.Together(
+                                    delayBuilder = {
+                                        it * 500L
+                                    }
+                                )
+                            )
+                        } else {
+
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+                        TimeRangeSelection(selectedTimeRange, onTimeRangeSelected)
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 
 

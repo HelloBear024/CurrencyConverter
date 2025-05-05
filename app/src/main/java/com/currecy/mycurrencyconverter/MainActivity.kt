@@ -1,6 +1,7 @@
 package com.currecy.mycurrencyconverter
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -17,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.currecy.mycurrencyconverter.navigation.AppNavGraph
 import com.currecy.mycurrencyconverter.navigation.AppScreen
@@ -36,9 +36,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             var selectedScreen by remember { mutableStateOf( AppScreen.HomePage ) }
-            val navBackStackEntry = navController.currentBackStackEntryAsState()
-            val currentRoute = navBackStackEntry.value?.destination?.route
             val hazeState = remember { HazeState() }
+
+            var takePhoto by remember { mutableStateOf(false) }
+
+            Log.d("MainScreen", "$takePhoto")
 
             MyCurrencyConverterTheme {
                 Box(
@@ -56,7 +58,8 @@ class MainActivity : ComponentActivity() {
                         ) {
                             AppNavGraph(
                                 navController = navController,
-                                hazeState = hazeState
+                                hazeState = hazeState,
+                                takePhoto = takePhoto
                             )
                         }
                     }
@@ -77,7 +80,8 @@ class MainActivity : ComponentActivity() {
                         hazeState = hazeState,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 30.dp)
+                            .padding(bottom = 30.dp),
+                        takePhoto = { newValue -> takePhoto = newValue}
                         )
                     }
                 }

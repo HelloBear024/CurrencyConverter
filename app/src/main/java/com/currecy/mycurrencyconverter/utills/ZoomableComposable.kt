@@ -23,19 +23,11 @@ import com.currecy.mycurrencyconverter.R
 
 @Composable
 fun ZoomableComposable() {
-    // Reacting to state changes is the core behavior of Compose.
-    // We use the state composable that is used for holding a
-    // state value in this composable for representing the current
-    // value scale(for zooming in the image)
-    // & translation(for panning across the image).
-    // Any composable that reads the value of counter will
-    // be recomposed any time the value changes.
+
     var scale by remember { mutableStateOf(1f) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
 
-    // In the example below, we make the Column composable zoomable
-    // by leveraging the Modifier.pointerInput modifier
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,

@@ -13,6 +13,7 @@ import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -47,15 +47,22 @@ import androidx.camera.core.Preview as CameraPreview
 @Composable
 fun CameraPreview(
     modifier: Modifier = Modifier,
-    onTextDetected: (String, android.graphics.Rect?) -> Unit,
-    rectangleBounds: RectF // Pass the transparent rectangle bounds here
+    onTextDetected: (String, Rect?) -> Unit,
+    previewViewSetter: (PreviewView) -> Unit,
+    imageCapture: ImageCapture,
+    rectangleBounds: RectF
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val previewView = remember { PreviewView(context) }
+    val previewView = remember { PreviewView(context).apply {
+        implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+    }}
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
 
-    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(previewView) {
+        previewViewSetter(previewView)
+    }
+
 
     LaunchedEffect(Unit) {
         val cameraProvider = cameraProviderFuture.await() // Use await() from kotlinx-coroutines-play-services
@@ -69,7 +76,6 @@ fun CameraPreview(
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
 
-        // Set up the analyzer
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
             processImageProxy(imageProxy, onTextDetected, rectangleBounds, previewView)
         }
@@ -77,12 +83,14 @@ fun CameraPreview(
         try {
             cameraProvider.unbindAll()
             cameraProvider.bindToLifecycle(
-                lifecycleOwner, cameraSelector, preview, imageAnalysis
+                lifecycleOwner, cameraSelector, preview, imageAnalysis, imageCapture
             )
         } catch (exc: Exception) {
             Log.e("CameraPreview", "Use case binding failed", exc)
         }
     }
+
+
 
     AndroidView(
         factory = { previewView },
@@ -167,7 +175,7 @@ private fun toBitmap(imageProxy: ImageProxy): Bitmap? {
 }
 
 
-private fun yuv420888ToNv21(imageProxy: ImageProxy): ByteArray {
+internal fun yuv420888ToNv21(imageProxy: ImageProxy): ByteArray {
     val yBuffer = imageProxy.planes[0].buffer // Y
     val uBuffer = imageProxy.planes[1].buffer // U
     val vBuffer = imageProxy.planes[2].buffer // V
