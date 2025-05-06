@@ -44,12 +44,13 @@ import kotlin.math.sqrt
 fun ExchangeRateLineChart(
     chartData: List<Pair<String, Double>>,
     modifier: Modifier = Modifier,
-    lineColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
+    lineColor: Color = Color(0xFFFD5B66),
+//    lineColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
     lineWidth: Float = 4f,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    backgroundColor: Color = Color.Transparent,
     axisColor: Color = Color.Black,
-    labelColor: Color = MaterialTheme.colorScheme.tertiary,
-    markerColor: Color = MaterialTheme.colorScheme.secondary,
+    labelColor: Color = Color.White,
+    markerColor: Color = Color(0xFFFD5B66),
     tooltipColor: Color = Color.Black.copy(alpha = 0.7f),
     tooltipTextColor: Color = Color.White,
     numberOfYTicks: Int = 5
