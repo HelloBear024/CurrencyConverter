@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
 import com.currecy.mycurrencyconverter.navigation.AppNavGraph
 import com.currecy.mycurrencyconverter.navigation.AppScreen
@@ -58,7 +59,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             var selectedScreen by remember { mutableStateOf(AppScreen.HomePage) }
-            val hazeState = remember { HazeState() }
+
+            val navBarHazeState = remember { HazeState() }
+            val inputHazeState = remember { HazeState() }
 
             var takePhoto by remember { mutableStateOf(false) }
 
@@ -76,7 +79,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .fillMaxSize()
                             .windowInsetsPadding(WindowInsets.navigationBars)
-                    ) { innerPadding ->
+                    ) { _ ->
 
 
                         var showSplash by remember { mutableStateOf(true) }
@@ -90,11 +93,11 @@ class MainActivity : ComponentActivity() {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(innerPadding)
+                                    .padding()
                             ) {
                                 AppNavGraph(
                                     navController = navController,
-                                    hazeState = hazeState,
+                                    hazeState = inputHazeState,
                                     takePhoto = takePhoto
                                 )
 
@@ -116,7 +119,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 },
-                                hazeState = hazeState,
+                                hazeState = navBarHazeState,
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
                                     .padding(bottom = 30.dp),

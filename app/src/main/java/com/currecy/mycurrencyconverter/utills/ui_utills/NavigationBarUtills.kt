@@ -3,6 +3,7 @@ package com.currecy.mycurrencyconverter.utills.ui_utills
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -34,15 +35,18 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.currecy.mycurrencyconverter.R
 import com.currecy.mycurrencyconverter.navigation.AppScreen
 import com.currecy.mycurrencyconverter.ui.BottomNavigation.Screen
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 
 
+@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun BottomNavigationBar(
     navController: NavHostController,
@@ -109,18 +113,20 @@ fun BottomNavigationBar(
                 .clip(RoundedCornerShape(30.dp))
                 .fillMaxWidth()
                 .height(navBarHeight),
+            shadowElevation = 2.dp,
             color = Color.Transparent,
         ) {
             Box(
                 Modifier
                     .clip(RoundedCornerShape(30.dp))
                     .fillMaxSize()
+                    .background(Color(0x99FD5B66))
+                    .zIndex(2f)
                     .hazeEffect(
                         state = hazeState,
                         style = HazeMaterials.ultraThin(containerColor = Color(0x99FD5B66))
                     ){
                         blurRadius = 30.dp
-                        noiseFactor
                     },
             ) {
                 Row(

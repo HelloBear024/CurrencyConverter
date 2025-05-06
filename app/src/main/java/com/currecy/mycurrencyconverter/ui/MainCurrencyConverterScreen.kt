@@ -43,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumeAllChanges
@@ -68,6 +69,7 @@ import com.currecy.mycurrencyconverter.utills.ui_utills.GlassmorphicContainerTex
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -85,6 +87,7 @@ fun getOrdinal(day: Int): String {
     }
 }
 
+@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun MainScreenCurrencyConverterEditTextView(
     hazeState: HazeState,
@@ -93,6 +96,8 @@ fun MainScreenCurrencyConverterEditTextView(
     val converterUIState by currencyViewModel.currencyRatesState.collectAsState()
     val listState = rememberLazyListState()
     val snackBarHostState = remember { SnackbarHostState() }
+
+    val thisHazeStateComp = remember { HazeState() }
 
     val currentDate = LocalDate.now()
     val dayOfWeekFormatter = DateTimeFormatter.ofPattern("EEE")
@@ -105,14 +110,24 @@ fun MainScreenCurrencyConverterEditTextView(
             .systemBarsPadding()
     ) { innerPadding ->
 
+//        AsyncImage(
+//            model = R.drawable.background_new,
+//            contentDescription = null,
+//            contentScale = ContentScale.Crop,
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .hazeSource(hazeState)
+//        )
         AsyncImage(
-            model = R.drawable.background,
+            model = R.drawable.background_new,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
                 .hazeSource(hazeState)
         )
+
+
 
         BoxWithConstraints(
             modifier = Modifier.fillMaxSize()
@@ -125,8 +140,9 @@ fun MainScreenCurrencyConverterEditTextView(
                 Column(
                     modifier = Modifier
                         .padding(
-                            horizontal = 24.dp,
-                            vertical = 12.dp
+                            top = 24.dp,
+                            start = 24.dp,
+                            end = 24.dp,
                         )
                 ) {
                     Text(
@@ -150,13 +166,7 @@ fun MainScreenCurrencyConverterEditTextView(
                     .align(Alignment.BottomCenter)
                     .height(maxHeight / 1.15f)
                     .width(maxWith)
-                    .hazeEffect(
-                        state = hazeState,
-                        style = HazeMaterials.ultraThin()
-                    ) {
-                        blurRadius = 30.dp
-                        noiseFactor
-                    },
+                    .background(Color(0x99FFFFFF))
             ) {
 
                 LazyColumn(

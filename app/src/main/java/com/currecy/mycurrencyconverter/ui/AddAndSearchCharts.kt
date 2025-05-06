@@ -115,7 +115,7 @@ fun AddAndSearchChartsApp(
     ) { innerPadding ->
 
         AsyncImage(
-            model = R.drawable.background,
+            model = R.drawable.background_new,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -137,13 +137,14 @@ fun AddAndSearchChartsApp(
                     .align(Alignment.BottomCenter)
                     .height(maxHeight / 1.15f)
                     .width(maxWith)
-                    .hazeEffect(
-                        state = hazeState,
-                        style = HazeMaterials.ultraThin()
-                    ) {
-                        blurRadius = 30.dp
-                        noiseFactor
-                    },
+                    .background(Color(0x99FFFFFF))
+//                    .hazeEffect(
+//                        state = hazeState,
+//                        style = HazeMaterials.ultraThin()
+//                    ) {
+//                        blurRadius = 30.dp
+//                        noiseFactor
+//                    },
             ) {
                 Box(
                     modifier = Modifier

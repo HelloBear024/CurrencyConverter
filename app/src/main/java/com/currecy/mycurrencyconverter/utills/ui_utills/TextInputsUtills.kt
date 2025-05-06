@@ -42,9 +42,9 @@ fun GlassmorphicContainerTextInputs(
             .clip(RoundedCornerShape(10.dp))
             .hazeEffect(
                 state = hazeState,
-                style = HazeMaterials.ultraThin(),
+                style = HazeMaterials.ultraThin(Color.White),
             ){
-                blurRadius = 20.dp
+                blurRadius = 60.dp
             }
     ) {
         content()
