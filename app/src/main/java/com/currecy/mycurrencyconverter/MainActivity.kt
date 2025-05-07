@@ -3,7 +3,9 @@ package com.currecy.mycurrencyconverter
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -36,8 +38,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
 import com.currecy.mycurrencyconverter.navigation.AppNavGraph
 import com.currecy.mycurrencyconverter.navigation.AppScreen
@@ -53,7 +53,15 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splash = installSplashScreen()
+
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(
+                android.graphics.Color.TRANSPARENT,
+            ),
+        )
+
+        var showCustomSplash by mutableStateOf(true)
+
         super.onCreate(savedInstanceState)
 
         setContent {
@@ -75,20 +83,19 @@ class MainActivity : ComponentActivity() {
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {
+
+
+                    if (showCustomSplash) {
+                        SplashAnimation {
+                            showCustomSplash = false
+                        }
+                    } else {
+
                     Scaffold(
                         modifier = Modifier
                             .fillMaxSize()
                             .windowInsetsPadding(WindowInsets.navigationBars)
-                    ) { _ ->
-
-
-                        var showSplash by remember { mutableStateOf(true) }
-                        if (showSplash) {
-                            SplashAnimation {
-                                showSplash = false
-                            }
-                        } else {
-
+                    ) { innerPadding ->
 
                             Box(
                                 modifier = Modifier

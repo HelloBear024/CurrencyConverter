@@ -9,7 +9,9 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.YuvImage
 import android.util.Log
+import android.view.Surface
 import androidx.annotation.OptIn
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -56,8 +58,10 @@ fun CameraPreview(
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember { PreviewView(context).apply {
         implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+
     }}
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
+
 
     LaunchedEffect(previewView) {
         previewViewSetter(previewView)
@@ -68,7 +72,10 @@ fun CameraPreview(
         val cameraProvider = cameraProviderFuture.await() // Use await() from kotlinx-coroutines-play-services
         val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-        val preview = CameraPreview.Builder().build().also {
+        val preview = CameraPreview.Builder()
+            .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+            .setTargetRotation(Surface.ROTATION_0)
+            .build().also {
             it.setSurfaceProvider(previewView.surfaceProvider)
         }
 

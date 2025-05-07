@@ -4,16 +4,19 @@ package com.currecy.mycurrencyconverter.ui
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -115,14 +119,19 @@ fun DetailScreen(
         }
     }
 
+
+    val density = LocalDensity.current
+    val statusBarHeight = WindowInsets.statusBars.getTop(density)
+
+    val statusBarDp = with(density) { statusBarHeight.toDp() }
+
+
     Scaffold(
         modifier = Modifier.fillMaxSize()
-            .systemBarsPadding()
     ) { _ ->
 
-
         AsyncImage(
-            model = R.drawable.background,
+            model = R.drawable.background_new,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -140,14 +149,14 @@ fun DetailScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp),
+                    .padding(top = 8.dp + statusBarDp),
                 contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "${conversion?.sourceCurrency?.uppercase() ?: ""} / ${conversion?.targetCurrency?.uppercase() ?: "" }",
                         fontSize = 30.sp,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        color = Color(0xFFFD5B66),
+                        color = Color(0xFFFFFFFF),
                         modifier = Modifier
                     )
                 }
@@ -157,24 +166,17 @@ fun DetailScreen(
                 modifier = Modifier
                     .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
                     .align(Alignment.BottomCenter)
-                    .height(maxHeight / 1.09f)
+                    .height(maxHeight / 1.11f)
                     .width(maxWith)
-                    .hazeEffect(
-                        state = hazeState,
-                        style = HazeMaterials.ultraThin()
-                    ) {
-                        blurRadius = 30.dp
-                        noiseFactor
-                    },
+                    .background(Color(0x99FFFFFF)),
             ) {
-
 
                 if (conversion != null) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding()
-                            .padding(top = 5.dp, start = 7.dp, end = 7.dp)
+                            .padding(top = 5.dp, start = 12.dp, end = 12.dp)
                     ) {
                         // Display Conversion Details
                         Spacer(modifier = Modifier.height(8.dp))
@@ -269,6 +271,7 @@ fun ChartSection(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .fillMaxWidth()
+                .background(Color(0x99FFFFFF))
                 .hazeEffect(
                     state = hazeState,
                     style = HazeMaterials.ultraThin()

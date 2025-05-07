@@ -12,11 +12,16 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,14 +32,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -92,24 +102,14 @@ fun AddAndSearchChartsApp(
         Log.d("AddAndSearchChartsApp", "Current conversions: $conversions")
     }
 
+    val density = LocalDensity.current
+    val statusBarHeight = WindowInsets.statusBars.getTop(density)
+
+    val statusBarDp = with(density) { statusBarHeight.toDp() }
+
+    var isSearchBarActive by remember { mutableStateOf(false) }
+
     Scaffold(
-        topBar = {
-            GlassmorphicContainerSearchbar(
-                hazeState = hazeState,
-                modifier = Modifier
-                    .padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 20.dp
-                        )
-            ) {
-                SearchingBar(
-                    query = searchQuery,
-                    onQueryChange = { newQuery -> detailViewModel.setSearchQuery(newQuery) }
-                )
-            }
-        },
-        floatingActionButton = {},
         modifier = Modifier
             .fillMaxSize()
     ) { innerPadding ->
@@ -126,10 +126,42 @@ fun AddAndSearchChartsApp(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
+//                .padding(top = statusBarDp + 8.dp )
                 .zIndex(3f)
         ) {
             val maxWith = this.maxWidth
             val maxHeight = this.maxHeight
+
+            Box(modifier = Modifier.zIndex(10f)
+                .padding(   top = 40.dp,
+                            start = if (isSearchBarActive) 0.dp else 16.dp,
+                    end = if (isSearchBarActive) 0.dp else 16.dp
+                            )
+            ) {
+                    SearchingBar(
+                        query = searchQuery,
+                        hazeState = hazeState,
+                        onQueryChange = { newQuery -> detailViewModel.setSearchQuery(newQuery) },
+                        isSearchBarActive = isSearchBarActive,
+                        onDismiss = { newValue -> isSearchBarActive = newValue }
+                    )
+
+//                GlassmorphicContainerSearchbar(
+//                    hazeState = hazeState,
+//                    modifier = Modifier
+//                        .padding(
+//                            horizontal = if (isSearchBarActive) 0.dp else 16.dp,
+//                            )
+//                ) {
+//                    SearchingBar(
+//                        query = searchQuery,
+//                        onQueryChange = { newQuery -> detailViewModel.setSearchQuery(newQuery) },
+//                        isSearchBarActive = isSearchBarActive,
+//                        onDismiss = { newValue -> isSearchBarActive = newValue }
+//                    )
+//                }
+            }
+
 
             Box(
                 modifier = Modifier
@@ -138,13 +170,6 @@ fun AddAndSearchChartsApp(
                     .height(maxHeight / 1.15f)
                     .width(maxWith)
                     .background(Color(0x99FFFFFF))
-//                    .hazeEffect(
-//                        state = hazeState,
-//                        style = HazeMaterials.ultraThin()
-//                    ) {
-//                        blurRadius = 30.dp
-//                        noiseFactor
-//                    },
             ) {
                 Box(
                     modifier = Modifier
@@ -168,7 +193,6 @@ fun AddAndSearchChartsApp(
                             hazeState = hazeState
                         )
                     }
-
                     if (showDialog) {
                         CurrencyConversionDialog(
                             onDismissRequest = { showDialog = false },
@@ -193,106 +217,346 @@ fun AddAndSearchChartsApp(
     }
 }
 
+
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun SearchingBar(
+//    query: String,
+//    onQueryChange: (String) -> Unit,
+//    isSearchBarActive: Boolean,
+//    onDismiss: (Boolean) -> Unit
+//){
+//    var active by rememberSaveable { mutableStateOf(false) }
+//    val focusManager = LocalFocusManager.current
+//
+//    SearchBar(
+//        query = query,
+//        onQueryChange = { newQuery ->
+//            Log.d("SearchingBar", "onQueryChange: $newQuery")
+//            onQueryChange(newQuery)
+//        },
+//        onSearch = {
+//            Log.d("SearchingBar", "onSearch triggered with query: $query")
+//            onDismiss(false)
+//            focusManager.clearFocus()
+//        },
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(top = 0.dp),
+//        colors = SearchBarDefaults.colors(
+//            containerColor =
+//                    Color(0x99FFFFFF)
+//            ,
+//
+//            dividerColor = Color.Transparent
+//        ),
+//        placeholder = { Text(
+//            "Search Currency",
+//            color = Color(0xFFFD5B66),
+//            fontSize = 16.sp,
+//        )
+//                      },
+//        trailingIcon = {
+//            if (query.isNotEmpty()) {
+//                IconButton(onClick = {
+//                    Log.d("SearchingBar", "Clear Search clicked")
+//                    onQueryChange("")
+//                }) {
+//                    Icon(
+//                        Icons.Default.Close,
+//                        contentDescription = "Clear Search",
+//                        tint = Color(0xFFFD5B66),
+//
+//                    )
+//                }
+//            } else {
+//                Icon(
+//                    Icons.Default.Search,
+//                    contentDescription = "Search Icon",
+//                    tint = Color(0xFFFD5B66)
+//                    )
+//            }
+//        },
+//
+//        active = isSearchBarActive,
+//        onActiveChange = { isActive ->
+//            Log.d("SearchingBar", "onActiveChange: $isActive")
+//            onDismiss(isActive)
+//        },
+//    ) {
+//        if (active && query.isNotEmpty()) {
+//            LazyColumn(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .background(Color.Transparent)
+//            ) {
+//
+//                val suggestions: List<Pair<String,String>> = CurrencyOptionsData.options
+//                    .filter { (name, code) ->
+//                        name.contains(query, ignoreCase = true) ||
+//                                code.contains(query, ignoreCase = true)
+//                    }
+//
+//
+//                items(suggestions) { (name, code) ->
+//                    Text(
+//                        text = name + code,
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .clickable {
+//
+//                                onQueryChange(name + code)
+//                                active = false
+//                                focusManager.clearFocus()
+//                            }
+//                            .padding(16.dp)
+//                        ,
+//                        fontWeight = FontWeight.SemiBold,
+//                        color = Color(0xFFFD5B66),
+//                        fontSize = 16.sp,
+//                        style = MaterialTheme.typography.bodyMedium
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchingBar(
     query: String,
-    onQueryChange: (String) -> Unit
-){
-    var active by rememberSaveable { mutableStateOf(false) }
+    hazeState: HazeState,
+    onQueryChange: (String) -> Unit,
+    isSearchBarActive: Boolean,
+    onDismiss: (Boolean) -> Unit
+) {
     val focusManager = LocalFocusManager.current
+    var expanded by rememberSaveable { mutableStateOf(false) }
 
-    SearchBar(
-        query = query,
-        onQueryChange = { newQuery ->
-            Log.d("SearchingBar", "onQueryChange: $newQuery")
-            onQueryChange(newQuery)
-        },
-        onSearch = {
-            Log.d("SearchingBar", "onSearch triggered with query: $query")
-            active = false
-            focusManager.clearFocus()
-        },
+    Column(
         modifier = Modifier
+            .clip(RoundedCornerShape(30.dp))
             .fillMaxWidth()
-            .padding(bottom = 4.dp)
-        ,
-        colors = SearchBarDefaults.colors(
-            containerColor = Color.Transparent,
-            dividerColor = Color.Transparent
-        ),
-        placeholder = { Text(
-            "Search Currency",
-            color = Color(0xFFFD5B66),
-            fontSize = 16.sp,
-        )
-                      },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = {
-                    Log.d("SearchingBar", "Clear Search clicked")
-                    onQueryChange("")
-                }) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Clear Search",
-                        tint = Color(0xFFFD5B66),
-
-                    )
-                }
-            } else {
-                Icon(
-                    Icons.Default.Search,
-                    contentDescription = "Search Icon",
-                    tint = Color(0xFFFD5B66)
-                    )
+            .let {
+                if (!isSearchBarActive) {
+                    it.hazeEffect(
+                        state = hazeState,
+                        style = HazeMaterials.ultraThin()
+                    ) { blurRadius = 20.dp }
+                } else it
             }
-        },
-
-        active = active,
-        onActiveChange = { isActive ->
-            Log.d("SearchingBar", "onActiveChange: $isActive")
-            active = isActive
-        },
     ) {
-        if (active && query.isNotEmpty()) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.Transparent)
-            ) {
-
-                val suggestions: List<Pair<String,String>> = CurrencyOptionsData.options
-                    .filter { (name, code) ->
-                        name.contains(query, ignoreCase = true) ||
-                                code.contains(query, ignoreCase = true)
+        OutlinedTextField(
+            value = query,
+            onValueChange = { newQuery ->
+                onQueryChange(newQuery)
+                expanded = newQuery.isNotEmpty()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 58.dp)
+                .clip(RoundedCornerShape(30.dp)),
+            placeholder = {
+                Text(
+                    "Search Currency",
+                    color = Color(0xFFFD5B66),
+                    fontSize = 16.sp
+                )
+            },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = {
+                        onQueryChange("")
+                        expanded = false
+                    }) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Clear Search",
+                            tint = Color(0xFFFD5B66)
+                        )
                     }
-
-
-                items(suggestions) { (name, code) ->
-                    Text(
-                        text = name + code,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-
-                                onQueryChange(name + code)
-                                active = false
-                                focusManager.clearFocus()
-                            }
-                            .padding(16.dp),
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFFD5B66),
-                        fontSize = 16.sp,
-                        style = MaterialTheme.typography.bodyMedium
+                } else {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Search Icon",
+                        tint = Color(0xFFFD5B66)
                     )
                 }
+            },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                errorContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+
+                focusedTextColor = Color.White,
+
+
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent
+
+            ),
+            singleLine = true
+        )
+
+        DropdownMenu(
+            expanded = expanded && isSearchBarActive,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.Transparent)
+        ) {
+            val suggestions = CurrencyOptionsData.options.filter { (name, code) ->
+                name.contains(query, ignoreCase = true) ||
+                        code.contains(query, ignoreCase = true)
+            }
+
+            suggestions.forEach { (name, code) ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = "$name $code",
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFFD5B66),
+                            fontSize = 16.sp,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    onClick = {
+                        onQueryChange("$name $code")
+                        expanded = false
+                        focusManager.clearFocus()
+                    }
+                )
             }
         }
     }
 }
 
-
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun SearchingBar(
+//    query: String,
+//    hazeState: HazeState,
+//    onQueryChange: (String) -> Unit,
+//    isSearchBarActive: Boolean,
+//    onDismiss: (Boolean) -> Unit
+//){
+//    var active by rememberSaveable { mutableStateOf(false) }
+//    val focusManager = LocalFocusManager.current
+//
+//    Box() {
+//        SearchBar(
+//            query = query,
+//            onQueryChange = { newQuery ->
+//                Log.d("SearchingBar", "onQueryChange: $newQuery")
+//                onQueryChange(newQuery)
+//            },
+//            onSearch = {
+//                Log.d("SearchingBar", "onSearch triggered with query: $query")
+//                onDismiss(false)
+//                focusManager.clearFocus()
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .defaultMinSize(minHeight = 58.dp) // or your desired height
+//                .clip(RoundedCornerShape(30.dp))
+//
+////                .then(if (!isSearchBarActive) {
+////                    Modifier.hazeEffect(
+////                    state = hazeState,
+////                    style = HazeMaterials.ultraThin()
+////                ) {
+////                    blurRadius = 20.dp
+////                }
+////                } else {
+////                    Modifier
+////                       }
+//
+//            ,
+//            colors = SearchBarDefaults.colors(
+//                containerColor =
+//                    Color.Transparent
+////                    Color(0x99FFFFFF)
+//                ,
+//
+//                dividerColor = Color.Transparent
+//            ),
+//            placeholder = {
+//                Text(
+//                    "Search Currency",
+//                    color = Color(0xFFFD5B66),
+//                    fontSize = 16.sp,
+//                )
+//            },
+//            trailingIcon = {
+//                if (query.isNotEmpty()) {
+//                    IconButton(onClick = {
+//                        Log.d("SearchingBar", "Clear Search clicked")
+//                        onQueryChange("")
+//                    }) {
+//                        Icon(
+//                            Icons.Default.Close,
+//                            contentDescription = "Clear Search",
+//                            tint = Color(0xFFFD5B66),
+//
+//                            )
+//                    }
+//                } else {
+//                    Icon(
+//                        Icons.Default.Search,
+//                        contentDescription = "Search Icon",
+//                        tint = Color(0xFFFD5B66)
+//                    )
+//                }
+//            },
+//
+//            active = isSearchBarActive,
+//            onActiveChange = { isActive ->
+//                Log.d("SearchingBar", "onActiveChange: $isActive")
+//                onDismiss(isActive)
+//            },
+//        ) {
+//            if (active && query.isNotEmpty()) {
+//                LazyColumn(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .background(Color.Transparent)
+//                ) {
+//
+//                    val suggestions: List<Pair<String, String>> = CurrencyOptionsData.options
+//                        .filter { (name, code) ->
+//                            name.contains(query, ignoreCase = true) ||
+//                                    code.contains(query, ignoreCase = true)
+//                        }
+//
+//
+//                    items(suggestions) { (name, code) ->
+//                        Text(
+//                            text = name + code,
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .clickable {
+//
+//                                    onQueryChange(name + code)
+//                                    active = false
+//                                    focusManager.clearFocus()
+//                                }
+//                                .padding(16.dp),
+//                            fontWeight = FontWeight.SemiBold,
+//                            color = Color(0xFFFD5B66),
+//                            fontSize = 16.sp,
+//                            style = MaterialTheme.typography.bodyMedium
+//                        )
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
 
 @Composable
 fun ConversionList(

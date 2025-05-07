@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <style name="Theme.MyCurrencyConverter.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#1F1F1F</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/dollar_sign</item>
+        <item name="postSplashScreenTheme">@style/Theme.MyCurrencyConverter</item>
+        <item name="windowNoTitle">true</item>
+
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
     <style name="Theme.MyCurrencyConverter" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="ThemeActionBar" parent="Widget.AppCompat.Light.ActionBar.Solid">
+        <item name="android:background"> @null </item>
+
+        <item name="background">@null</item>
+        <item name="displayOptions">showHome|useLogo</item>
+
+    </style>
+
 </resources>
+
+

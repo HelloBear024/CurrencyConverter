@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -43,12 +46,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.glance.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.currecy.mycurrencyconverter.R
@@ -67,10 +71,8 @@ import com.currecy.mycurrencyconverter.utills.ui_utills.DropdownMenuSpinner
 import com.currecy.mycurrencyconverter.utills.ui_utills.EditNumberField
 import com.currecy.mycurrencyconverter.utills.ui_utills.GlassmorphicContainerTextInputs
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -104,20 +106,16 @@ fun MainScreenCurrencyConverterEditTextView(
     val day = currentDate.format(dayOfWeekFormatter)
     val dayOfMonthOrdinal = getOrdinal(currentDate.dayOfMonth)
 
+    val density = LocalDensity.current
+    val statusBarHeight = WindowInsets.statusBars.getTop(density)
+
+    val statusBarDp = with(density) { statusBarHeight.toDp() }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         modifier = Modifier.fillMaxSize()
-            .systemBarsPadding()
-    ) { innerPadding ->
+    ) {  _ ->
 
-//        AsyncImage(
-//            model = R.drawable.background_new,
-//            contentDescription = null,
-//            contentScale = ContentScale.Crop,
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .hazeSource(hazeState)
-//        )
         AsyncImage(
             model = R.drawable.background_new,
             contentDescription = null,
@@ -140,7 +138,7 @@ fun MainScreenCurrencyConverterEditTextView(
                 Column(
                     modifier = Modifier
                         .padding(
-                            top = 24.dp,
+                            top = statusBarDp + 8.dp,
                             start = 24.dp,
                             end = 24.dp,
                         )
@@ -173,7 +171,7 @@ fun MainScreenCurrencyConverterEditTextView(
                     state = listState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
+                        .padding()
                         .padding(16.dp)
                         .padding(bottom = 0.dp)
                 ) {
