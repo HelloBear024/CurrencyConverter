@@ -1,7 +1,10 @@
 package com.currecy.mycurrencyconverter.model.cameraModel
 
 import android.graphics.Bitmap
+import android.graphics.Matrix
+import android.graphics.RectF
 import android.util.Log
+import android.util.Size
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.currecy.mycurrencyconverter.database.preferencess.camera.CameraPagePreferencesRepository
@@ -17,9 +20,9 @@ import javax.inject.Inject
 @HiltViewModel
 class CameraViewModel @Inject constructor(
     private val currencyDao: CurrencyRateDao,
-    private val preferencesRepository: CameraPagePreferencesRepository
+    private val preferencesRepository: CameraPagePreferencesRepository,
+//    private val cropper: ImageCropper
 ): ViewModel() {
-
 
     //new Implimentation
     private val _fullBitmap = MutableStateFlow<Bitmap?>(null)
@@ -36,6 +39,18 @@ class CameraViewModel @Inject constructor(
             fetchPreferencesAndUpdateState()
         }
     }
+
+//    suspend fun processImage(imageProxy: ImageProxy, viewSize: Size, cropRect: RectF) {
+//        val bitmap = imageProxy.toBitmap() // extension you already have
+//        val cropped = cropper.cropFromViewRect(
+//            fullBitmap   = bitmap,
+//            viewSize     = viewSize,
+//            destSize     = Size(bitmap.width, bitmap.height),
+//            cropRectOnView = cropRect
+//        )
+//        saveAndNavigate(cropped)
+//        bitmap.recycle()
+//    }
 
 
     private suspend fun fetchPreferencesAndUpdateState() {
@@ -125,7 +140,59 @@ class CameraViewModel @Inject constructor(
     private fun formatToTwoDecimals(value: Double): Double {
         return "%.2f".format(value).toDouble()
     }
+}
+
+interface ImageCropper {
+    /**
+     * Map the rectangle in **view** coordinates into the full‐size bitmap, then
+     * return a cropped bitmap of that region.
+     *
+     * @param fullBitmap the camera capture at sensor resolution.
+     * @param viewSize   the size of the PreviewView on screen (px).
+     * @param destSize   the size of the fullBitmap (px).
+     * @param cropRectOnView the rectangle drawn on the PreviewView (px).
+     */
+    fun cropFromViewRect(
+        fullBitmap: Bitmap,
+        viewSize: Size,
+        destSize: Size,
+        cropRectOnView: RectF
+    ): Bitmap
+}
+
+class MatrixImageCropper : ImageCropper {
+    override fun cropFromViewRect(
+        fullBitmap: Bitmap,
+        viewSize: Size,
+        destSize: Size,
+        cropRectOnView: RectF
+    ): Bitmap {
+        // 1) Build a matrix that maps view→bitmap
+        val viewRect = RectF(0f, 0f, viewSize.width.toFloat(), viewSize.height.toFloat())
+        val bmpRect  = RectF(0f, 0f, destSize.width.toFloat(), destSize.height.toFloat())
+        val m = Matrix().apply {
+            // FILL is correct for PreviewView’s default ScaleType (CENTER_CROP)
+            setRectToRect(viewRect, bmpRect, Matrix.ScaleToFit.FILL)
+            invert(this)
+        }
+
+        // 2) Transform the cropRect corners
+        val pts = floatArrayOf(
+            cropRectOnView.left,  cropRectOnView.top,
+            cropRectOnView.right, cropRectOnView.bottom
+        )
+        m.mapPoints(pts)
+
+        // 3) Clamp and convert to ints
+        val left   = pts[0].coerceIn(0f, destSize.width.toFloat()).toInt()
+        val top    = pts[1].coerceIn(0f, destSize.height.toFloat()).toInt()
+        val right  = pts[2].coerceIn(0f, destSize.width.toFloat()).toInt()
+        val bottom = pts[3].coerceIn(0f, destSize.height.toFloat()).toInt()
+
+        return Bitmap.createBitmap(fullBitmap, left, top, right - left, bottom - top)
     }
+}
+
 
 
 
