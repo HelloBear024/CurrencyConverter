@@ -75,10 +75,6 @@ class MainActivity : ComponentActivity() {
 
             Log.d("MainScreen", "$takePhoto")
 
-            //would be a good implimentation for the future
-//            splash.setKeepOnScreenCondition { myViewModel.isLoading.value }
-
-
             MyCurrencyConverterTheme {
                 Box(
                     modifier = Modifier.fillMaxSize()
@@ -105,7 +101,10 @@ class MainActivity : ComponentActivity() {
                                 AppNavGraph(
                                     navController = navController,
                                     hazeState = inputHazeState,
-                                    takePhoto = takePhoto
+                                    takePhoto = takePhoto,
+                                    onPhotoTaken = {
+                                        takePhoto = !takePhoto
+                                    }
                                 )
 
 

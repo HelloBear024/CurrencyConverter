@@ -20,6 +20,7 @@ fun AppNavGraph(
     navController: NavHostController,
     hazeState: HazeState,
     takePhoto: Boolean,
+    onPhotoTaken: () -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -27,12 +28,18 @@ fun AppNavGraph(
     ) {
         navigation(startDestination = "home_page", route = "home_graph") {
             composable("home_page") { MainScreenCurrencyConverterEditTextView(hazeState = hazeState) }
-            composable("camera_conversion_page") { CameraPreviewScreen(
-                hazeState = hazeState,
-                navController = navController,
-                takePhoto = takePhoto
-            ) }
-            composable("search_chart_page") { AddAndSearchChartsApp(navController, hazeState = hazeState) }
+            composable("camera_conversion_page") {
+                CameraPreviewScreen(
+                    hazeState = hazeState,
+                    navController = navController,
+                    takePhoto = takePhoto,
+                    onPhotoTaken = onPhotoTaken
+                )
+            }
+            composable("search_chart_page") {
+                AddAndSearchChartsApp(navController, hazeState = hazeState)
+            }
+
             composable("image_conversion_page?uri={uri}",
                 arguments = listOf(
                     navArgument("uri") {

@@ -44,7 +44,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     packaging {
         resources {
@@ -103,8 +103,8 @@ dependencies {
     implementation(libs.coil.compose)
 
 
-    implementation("androidx.glance:glance-appwidget:1.1.0")
-    implementation ("androidx.glance:glance-material3:1.1.0")
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation ("androidx.glance:glance-material3:1.1.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -116,8 +116,8 @@ dependencies {
     implementation(kotlin("script-runtime"))
 
 
-    implementation("dev.chrisbanes.haze:haze:1.5.3")
-    implementation("dev.chrisbanes.haze:haze-materials:1.5.3")
+    implementation("dev.chrisbanes.haze:haze:1.6.2")
+    implementation("dev.chrisbanes.haze:haze-materials:1.6.2")
 
     implementation("io.github.ehsannarmani:compose-charts:0.1.2")
 
@@ -126,6 +126,8 @@ dependencies {
 
     // splash
     implementation(libs.core.splashscreen)
+
+
 
 
 }

@@ -126,7 +126,6 @@ fun AddAndSearchChartsApp(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-//                .padding(top = statusBarDp + 8.dp )
                 .zIndex(3f)
         ) {
             val maxWith = this.maxWidth
@@ -146,20 +145,6 @@ fun AddAndSearchChartsApp(
                         onDismiss = { newValue -> isSearchBarActive = newValue }
                     )
 
-//                GlassmorphicContainerSearchbar(
-//                    hazeState = hazeState,
-//                    modifier = Modifier
-//                        .padding(
-//                            horizontal = if (isSearchBarActive) 0.dp else 16.dp,
-//                            )
-//                ) {
-//                    SearchingBar(
-//                        query = searchQuery,
-//                        onQueryChange = { newQuery -> detailViewModel.setSearchQuery(newQuery) },
-//                        isSearchBarActive = isSearchBarActive,
-//                        onDismiss = { newValue -> isSearchBarActive = newValue }
-//                    )
-//                }
             }
 
 
@@ -169,7 +154,7 @@ fun AddAndSearchChartsApp(
                     .align(Alignment.BottomCenter)
                     .height(maxHeight / 1.15f)
                     .width(maxWith)
-                    .background(Color(0x99FFFFFF))
+                    .background( Color(0x99FFFFFF) )
             ) {
                 Box(
                     modifier = Modifier
@@ -216,112 +201,6 @@ fun AddAndSearchChartsApp(
         }
     }
 }
-
-
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun SearchingBar(
-//    query: String,
-//    onQueryChange: (String) -> Unit,
-//    isSearchBarActive: Boolean,
-//    onDismiss: (Boolean) -> Unit
-//){
-//    var active by rememberSaveable { mutableStateOf(false) }
-//    val focusManager = LocalFocusManager.current
-//
-//    SearchBar(
-//        query = query,
-//        onQueryChange = { newQuery ->
-//            Log.d("SearchingBar", "onQueryChange: $newQuery")
-//            onQueryChange(newQuery)
-//        },
-//        onSearch = {
-//            Log.d("SearchingBar", "onSearch triggered with query: $query")
-//            onDismiss(false)
-//            focusManager.clearFocus()
-//        },
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(top = 0.dp),
-//        colors = SearchBarDefaults.colors(
-//            containerColor =
-//                    Color(0x99FFFFFF)
-//            ,
-//
-//            dividerColor = Color.Transparent
-//        ),
-//        placeholder = { Text(
-//            "Search Currency",
-//            color = Color(0xFFFD5B66),
-//            fontSize = 16.sp,
-//        )
-//                      },
-//        trailingIcon = {
-//            if (query.isNotEmpty()) {
-//                IconButton(onClick = {
-//                    Log.d("SearchingBar", "Clear Search clicked")
-//                    onQueryChange("")
-//                }) {
-//                    Icon(
-//                        Icons.Default.Close,
-//                        contentDescription = "Clear Search",
-//                        tint = Color(0xFFFD5B66),
-//
-//                    )
-//                }
-//            } else {
-//                Icon(
-//                    Icons.Default.Search,
-//                    contentDescription = "Search Icon",
-//                    tint = Color(0xFFFD5B66)
-//                    )
-//            }
-//        },
-//
-//        active = isSearchBarActive,
-//        onActiveChange = { isActive ->
-//            Log.d("SearchingBar", "onActiveChange: $isActive")
-//            onDismiss(isActive)
-//        },
-//    ) {
-//        if (active && query.isNotEmpty()) {
-//            LazyColumn(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .background(Color.Transparent)
-//            ) {
-//
-//                val suggestions: List<Pair<String,String>> = CurrencyOptionsData.options
-//                    .filter { (name, code) ->
-//                        name.contains(query, ignoreCase = true) ||
-//                                code.contains(query, ignoreCase = true)
-//                    }
-//
-//
-//                items(suggestions) { (name, code) ->
-//                    Text(
-//                        text = name + code,
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .clickable {
-//
-//                                onQueryChange(name + code)
-//                                active = false
-//                                focusManager.clearFocus()
-//                            }
-//                            .padding(16.dp)
-//                        ,
-//                        fontWeight = FontWeight.SemiBold,
-//                        color = Color(0xFFFD5B66),
-//                        fontSize = 16.sp,
-//                        style = MaterialTheme.typography.bodyMedium
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -436,128 +315,6 @@ fun SearchingBar(
     }
 }
 
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun SearchingBar(
-//    query: String,
-//    hazeState: HazeState,
-//    onQueryChange: (String) -> Unit,
-//    isSearchBarActive: Boolean,
-//    onDismiss: (Boolean) -> Unit
-//){
-//    var active by rememberSaveable { mutableStateOf(false) }
-//    val focusManager = LocalFocusManager.current
-//
-//    Box() {
-//        SearchBar(
-//            query = query,
-//            onQueryChange = { newQuery ->
-//                Log.d("SearchingBar", "onQueryChange: $newQuery")
-//                onQueryChange(newQuery)
-//            },
-//            onSearch = {
-//                Log.d("SearchingBar", "onSearch triggered with query: $query")
-//                onDismiss(false)
-//                focusManager.clearFocus()
-//            },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .defaultMinSize(minHeight = 58.dp) // or your desired height
-//                .clip(RoundedCornerShape(30.dp))
-//
-////                .then(if (!isSearchBarActive) {
-////                    Modifier.hazeEffect(
-////                    state = hazeState,
-////                    style = HazeMaterials.ultraThin()
-////                ) {
-////                    blurRadius = 20.dp
-////                }
-////                } else {
-////                    Modifier
-////                       }
-//
-//            ,
-//            colors = SearchBarDefaults.colors(
-//                containerColor =
-//                    Color.Transparent
-////                    Color(0x99FFFFFF)
-//                ,
-//
-//                dividerColor = Color.Transparent
-//            ),
-//            placeholder = {
-//                Text(
-//                    "Search Currency",
-//                    color = Color(0xFFFD5B66),
-//                    fontSize = 16.sp,
-//                )
-//            },
-//            trailingIcon = {
-//                if (query.isNotEmpty()) {
-//                    IconButton(onClick = {
-//                        Log.d("SearchingBar", "Clear Search clicked")
-//                        onQueryChange("")
-//                    }) {
-//                        Icon(
-//                            Icons.Default.Close,
-//                            contentDescription = "Clear Search",
-//                            tint = Color(0xFFFD5B66),
-//
-//                            )
-//                    }
-//                } else {
-//                    Icon(
-//                        Icons.Default.Search,
-//                        contentDescription = "Search Icon",
-//                        tint = Color(0xFFFD5B66)
-//                    )
-//                }
-//            },
-//
-//            active = isSearchBarActive,
-//            onActiveChange = { isActive ->
-//                Log.d("SearchingBar", "onActiveChange: $isActive")
-//                onDismiss(isActive)
-//            },
-//        ) {
-//            if (active && query.isNotEmpty()) {
-//                LazyColumn(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .background(Color.Transparent)
-//                ) {
-//
-//                    val suggestions: List<Pair<String, String>> = CurrencyOptionsData.options
-//                        .filter { (name, code) ->
-//                            name.contains(query, ignoreCase = true) ||
-//                                    code.contains(query, ignoreCase = true)
-//                        }
-//
-//
-//                    items(suggestions) { (name, code) ->
-//                        Text(
-//                            text = name + code,
-//                            modifier = Modifier
-//                                .fillMaxWidth()
-//                                .clickable {
-//
-//                                    onQueryChange(name + code)
-//                                    active = false
-//                                    focusManager.clearFocus()
-//                                }
-//                                .padding(16.dp),
-//                            fontWeight = FontWeight.SemiBold,
-//                            color = Color(0xFFFD5B66),
-//                            fontSize = 16.sp,
-//                            style = MaterialTheme.typography.bodyMedium
-//                        )
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-
 @Composable
 fun ConversionList(
     conversions: List<ChartCurrencyState>,
@@ -579,7 +336,6 @@ fun ConversionList(
             var isSwiped by remember { mutableStateOf(false) }
 
             if (!isSwiped) {
-                // Create an Animatable for the horizontal offset
                 val offsetX = remember { Animatable(0f) }
                 val scope = rememberCoroutineScope()
 
@@ -593,11 +349,9 @@ fun ConversionList(
                             detectHorizontalDragGestures(
                                 onDragEnd = {
                                     scope.launch {
-                                        // Define the swipe threshold (e.g., 30% of the screen width)
                                         val swipeThreshold = 300f
 
                                         if (-offsetX.value > swipeThreshold) {
-                                            // Animate the item off the screen to the left
                                             offsetX.animateTo(
                                                 targetValue = -1000f,
                                                 animationSpec = tween(durationMillis = 300)
@@ -605,7 +359,6 @@ fun ConversionList(
                                             isSwiped = true
                                             onDelete(conversion)
                                         } else {
-                                            // Animate the item back to its original position
                                             offsetX.animateTo(
                                                 targetValue = 0f,
                                                 animationSpec = tween(durationMillis = 300)
@@ -734,9 +487,9 @@ fun ConversionCard(
                     )
                 }
             }
-            }
         }
     }
+}
 
 
 

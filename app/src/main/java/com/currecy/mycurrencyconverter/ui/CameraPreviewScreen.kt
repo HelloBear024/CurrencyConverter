@@ -77,6 +77,7 @@ import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -85,7 +86,8 @@ fun CameraPreviewScreen(
     cameraViewModel: CameraViewModel = hiltViewModel(),
     hazeState: HazeState,
     navController: NavController,
-    takePhoto: Boolean
+    takePhoto: Boolean,
+    onPhotoTaken: () -> Unit
 ) {
 
     Log.d("CameraPreviewScreen", "take photo: $takePhoto")
@@ -262,25 +264,29 @@ fun CameraPreviewScreen(
                                 val screenWidth = previewView!!.width
                                 val screenHeight = previewView!!.height
 
-                                val cropBmp = cropAndScaleToView(
-                                    screenHeight = screenHeight,
-                                    screenWidth = screenWidth,
-                                source = fullBmp,
-                                )
+                                val cropBmp = fullBmp.rotate(90f).centerCropAndScale(screenWidth, screenHeight)
+
+                                val left = rectangleBounds.left.roundToInt().coerceIn(0, cropBmp.width - 1)
+                                val top = rectangleBounds.top.roundToInt().coerceIn(0, cropBmp.height - 1)
+                                val width = rectangleBounds.width().roundToInt().coerceAtMost(cropBmp.width - left)
+                                val height = rectangleBounds.height().roundToInt().coerceAtMost(cropBmp.height - top)
+
+                                val clippedBmp = Bitmap.createBitmap(cropBmp, left, top, width, height)
 
                                 Log.d("Camera Prew","bitmap height = ${cropBmp.height} bitmap width = ${cropBmp.width}")
 
                                 val croppedUri = saveBitmapToGallery(
                                     context,
-                                    cropBmp,
+                                    clippedBmp,
                                     displayNamePrefix = "crop_"
                                 )
 
                                 imageProxy.close()
-                                cropBmp.recycle()
+                                clippedBmp.recycle()
 
                                 // 5) navigate on the main thread
                                 withContext(Dispatchers.Main) {
+                                    onPhotoTaken()
                                     navController.navigate(
                                         "image_conversion_page?uri=${Uri.encode(croppedUri.toString())}"
                                     ) {
@@ -295,7 +301,6 @@ fun CameraPreviewScreen(
                         }
                     }
                 )
-
             }
         }
 
@@ -351,16 +356,19 @@ fun CameraPreviewScreen(
                 Box(
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .padding(top = 100.dp)
+                        .padding(
+                            top = 100.dp
+                        )
 
-                ) { Box(
+                ) {
+                    Box(
                     modifier = Modifier
                         .background(Color.Gray.copy(alpha = 0.7f))
                         .clip(RoundedCornerShape(40.dp))
 
                 ) {
                     Text(
-                        text = "${converterUIStateCamera.selectedCurrencyTo.uppercase()}: ${converterUIStateCamera.conversionResult}",
+                        text = "${ converterUIStateCamera.selectedCurrencyTo.uppercase() }: ${converterUIStateCamera.conversionResult}",
                         color = Color.White,
                         style = MaterialTheme.typography.headlineLarge
                     )
@@ -410,107 +418,6 @@ fun CameraPreviewScreen(
     }
 }
 
-//fun cropBitmapFromPreview(
-//    boxHeight: Float,
-//    boxWidth: Float,
-//    source: Bitmap,
-//    rectF: RectF,
-//): Bitmap {
-//
-//
-//    val bitmapWidth = source.width.toFloat()
-//    val bitmapHeight = source.height.toFloat()
-//
-//    Log.d("Bitmap height", "$bitmapHeight")
-//    Log.d("Bitmap width", "$bitmapWidth")
-//
-//    Log.d("Box boxHeight", "$boxHeight")
-//    Log.d("Box boxWidth", "$boxWidth")
-//
-//    val getExtraWidth = (bitmapWidth - boxWidth) / 2
-//
-//    val toDivide = getExtraWidth.toInt() * 2
-//
-//    Log.d("ExtraWidth", "$getExtraWidth")
-//
-//    val viewAR = boxWidth / boxHeight
-//    val bmpAR  = bitmapWidth / bitmapHeight
-//
-//    // 1) figure out how the bitmap was scaled & letter-boxed to fill the view
-//    val scale: Float
-//    val dx: Float  // how much the bmp is shifted horizontally
-//    val dy: Float  // how much the bmp is shifted vertically
-//
-////    if (viewAR > bmpAR) {
-////        // view is wider → bmp height exactly matches view height
-////        scale = bitmapHeight / boxHeight
-////        dx    = (bitmapWidth - boxWidth * scale) / 2f
-////        dy    = 0f
-////    } else {
-////        // view is taller → bmp width exactly matches view width
-////        scale = bitmapWidth / boxWidth
-////        dx    = 0f
-////        dy    = (bitmapHeight - boxHeight * scale) / 2f
-////    }
-//
-//    // 2) map rectF corners into bitmap space
-//    val left   = ((rectF.left)).toInt()
-//    val top    = ((rectF.top)).toInt()
-//    val right  = ((rectF.right)).toInt()
-//    val bottom = (rectF.bottom).toInt()
-//
-//    val cropW = boxHeight.toInt()
-//    val cropH = bottom - top
-//
-//    Log.d("cropBitmapFromPreview", "Crop Rect Bitmap Coordinates: left=$left, top=$top, right=$right, bottom=$bottom")
-//
-//    return Bitmap.createBitmap(source, getExtraWidth.toInt(), 0, bitmapWidth.toInt() - toDivide, bitmapHeight.toInt() )
-//
-//}
-
-
-fun cropBitmapFromPreview(
-    source: Bitmap,
-    viewWidth: Float,
-    viewHeight: Float,
-    rectF: RectF
-): Bitmap {
-    val srcW = source.width.toFloat()
-    val srcH = source.height.toFloat()
-    val targetW = viewWidth.toFloat()
-    val targetH = viewHeight.toFloat()
-
-    // 1) Figure out which dimension overflows when filling screen (center-crop)
-    val srcAR = srcW / srcH
-    val tgtAR = targetW / targetH
-
-    val cropRect = if (srcAR > tgtAR) {
-        // source is too wide → crop width
-        val cropW = (srcH * tgtAR)
-        val xOff  = (srcW - cropW) / 2f
-        RectF(xOff, 0f, xOff + cropW, srcH)
-    } else {
-        // source is too tall → crop height
-        val cropH = (srcW / tgtAR)
-        val yOff  = (srcH - cropH) / 2f
-        RectF(0f, yOff, srcW, yOff + cropH)
-    }
-
-    // 2) Extract that region from the source (no scaling yet)
-    val left   = cropRect.left.toInt()
-    val top    = cropRect.top.toInt()
-    val width  = (cropRect.width()).toInt()
-    val height = (cropRect.height()).toInt()
-    val cropped = Bitmap.createBitmap(source, left, top, width, height)
-
-    // 3) Scale the crop to exactly the screen resolution
-    return Bitmap.createScaledBitmap(cropped, viewWidth.toInt(), viewHeight.toInt(), true).also {
-        // clean up intermediate
-        cropped.recycle()
-    }
-}
-
-
 
 
 fun saveBitmapToGallery(
@@ -533,7 +440,7 @@ fun saveBitmapToGallery(
         .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv)!!
 
     context.contentResolver.openOutputStream(uri)?.use { out ->
-        bmp.rotate(90f).compress(Bitmap.CompressFormat.JPEG, 90, out)
+        bmp.compress(Bitmap.CompressFormat.JPEG, 90, out)
     }
     return uri
 }
@@ -644,35 +551,54 @@ fun cropAndScaleToView(
     screenWidth: Int,
     screenHeight: Int
 ): Bitmap {
+
+
+    Log.d("Crop Function","bitmap height = ${source.height} bitmap width = ${source.width}")
+    Log.d("Crop Function","Phone screen height = ${screenHeight} Phone screen width = ${screenWidth}" )
+
     val bitmapWidth = source.width.toFloat()
     val bitmapHeight = source.height.toFloat()
 
     val screenAspectRatio = screenWidth / screenHeight.toFloat()
     val bitmapAspectRatio = bitmapWidth / bitmapHeight
 
+    Log.d("Crop Function","Screen Aspect Ratio  = $screenAspectRatio " )
+
+    Log.d("Crop Function","Bitmap Aspect Ratio  = $bitmapAspectRatio " )
+
     val scale: Float
     val scaledWidth: Float
     val scaledHeight: Float
 
     if (bitmapAspectRatio > screenAspectRatio) {
-        // Bitmap is wider, scale height to match screen, crop width
         scale = screenHeight / bitmapHeight
         scaledWidth = scale * bitmapWidth
         scaledHeight = screenHeight.toFloat()
     } else {
-        // Bitmap is taller, scale width to match screen, crop height
         scale = screenWidth / bitmapWidth
         scaledWidth = screenWidth.toFloat()
         scaledHeight = scale * bitmapHeight
     }
 
-    val dx = (scaledWidth - screenWidth) / 2f
-    val dy = (scaledHeight - screenHeight) / 2f
+
+    Log.d("Crop Function","Scale   = $scale " )
+
+    Log.d("Crop Function","Scale Width  = $scaledWidth " )
+    Log.d("Crop Function","Scale Height  = $scaledHeight " )
+
+    val dx = (scaledWidth - screenWidth) / 2.0f
+    val dy = (scaledHeight - screenHeight) / 2.0f
+
+    Log.d("Crop Function","dx   = $dx " )
+    Log.d("Crop Function","dy  = $dy " )
 
     val matrix = Matrix().apply {
         postScale(scale, scale)
         postTranslate(-dx, -dy)
     }
+
+    Log.d("Crop Function","matrix   = ${matrix} " )
+
 
     return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
         .let { Bitmap.createBitmap(it, 0, 0, screenWidth, screenHeight) }
@@ -685,3 +611,31 @@ fun Bitmap.rotate(degrees: Float): Bitmap {
     return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
 }
 
+fun Bitmap.centerCropAndScale(targetWidth: Int, targetHeight: Int): Bitmap {
+    // Compute aspect ratios
+    val srcRatio    = this.width.toFloat()  / this.height.toFloat()
+    val targetRatio = targetWidth.toFloat() / targetHeight.toFloat()
+
+    // Determine the dimensions of the crop in the source bitmap
+    val cropWidth: Int
+    val cropHeight: Int
+    if (srcRatio > targetRatio) {
+        // Source is wider than target: crop width
+        cropHeight = this.height
+        cropWidth  = (targetRatio * cropHeight).toInt()
+    } else {
+        // Source is taller (or equal ratio): crop height
+        cropWidth  = this.width
+        cropHeight = (cropWidth / targetRatio).toInt()
+    }
+
+    // Center the crop rect
+    val xOffset = (this.width  - cropWidth)  / 2
+    val yOffset = (this.height - cropHeight) / 2
+
+    // 1) Crop the region from the original
+    val cropped = Bitmap.createBitmap(this, xOffset, yOffset, cropWidth, cropHeight)
+
+    // 2) Scale the cropped bitmap to the exact target dimensions
+    return Bitmap.createScaledBitmap(cropped, targetWidth, targetHeight, true)
+}

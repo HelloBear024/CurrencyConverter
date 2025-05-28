@@ -36,9 +36,9 @@ class CardCurrencyViewModel @Inject constructor (
 
     val conversions: StateFlow<List<ChartCurrencyState>> = userRepo.getAllPreferences()
         .map { preferences ->
+
             preferences.map { preference ->
 
-                // Fetch the two most recent rates for both currencies
                 val firstRates = ratesRepo.getTwoMostRecentRates(preference.firstCurrencyCode)
                 val secondRates = ratesRepo.getTwoMostRecentRates(preference.secondCurrencyCode)
 
@@ -51,7 +51,6 @@ class CardCurrencyViewModel @Inject constructor (
                 Log.d("CardCurrencyViewModel", "First Current Rate ($firstCurrentRate), First Previous Rate ($firstPreviousRate)")
                 Log.d("CardCurrencyViewModel", "Second Current Rate ($secondCurrentRate), Second Previous Rate ($secondPreviousRate)")
 
-                // Calculate the combined exchange rate for the two most recent rates
                 val todayRate = if (firstCurrentRate != 0.0) {
                     secondCurrentRate / firstCurrentRate
                 } else 0.0
@@ -64,7 +63,6 @@ class CardCurrencyViewModel @Inject constructor (
 
                 Log.d("CardCurrencyViewModel", "yesterdayRate : ($yesterdayRate)")
 
-                // Calculate the percentage change in the combined exchange rate
                 val percentageChange = if (yesterdayRate > 0) {
                     ((todayRate - yesterdayRate) / yesterdayRate) * 100
                 } else {
@@ -88,7 +86,6 @@ class CardCurrencyViewModel @Inject constructor (
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
 
-    // Function to add a new conversion
     fun addConversion(source: String, target: String) {
         Log.d("CardCurrencyViewModel", "Adding conversion: $source -> $target")
         viewModelScope.launch {try {
@@ -132,8 +129,6 @@ class CardCurrencyViewModel @Inject constructor (
         }
     }
 
-
-    // **Filtered Conversions Based on Search Query**
     val filteredConversions: StateFlow<List<ChartCurrencyState>> = combine(conversions, _searchQuery) { conversions, query ->
         if (query.isBlank()) {
             conversions
@@ -145,7 +140,6 @@ class CardCurrencyViewModel @Inject constructor (
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    // **Function to Update the Search Query**
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
