@@ -98,7 +98,6 @@ fun CameraPreviewScreen(
     var detectionStartTime by remember { mutableStateOf(0L) }
     var conversionTriggered by remember { mutableStateOf(false) }
 
-
     // State for detected text and its position
     var detectedText by remember { mutableStateOf("") }
     var textPosition by remember { mutableStateOf<Rect?>(null) }
@@ -303,9 +302,6 @@ fun CameraPreviewScreen(
                 )
             }
         }
-
-
-
 
         Box(modifier = Modifier
             .fillMaxWidth()
